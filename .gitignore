@@ -72,4 +72,4 @@ target/
 .ipynb_checkpoints
 logfile.txt
 
-examples/rbp/example_files/variants.vcf.gz.tbi
+tests/models/rbp/example_files/variants.vcf.gz.tbi

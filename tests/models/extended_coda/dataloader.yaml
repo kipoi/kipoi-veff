@@ -1,0 +1,57 @@
+type: BatchGenerator
+defined_as: dataloader.py::extractor
+args:
+    intervals_file:
+        doc: "tsv file with `chrom start end`"
+        example: "example_files/intervals.tsv"
+        type: str
+    input_data_sources:
+        doc: "{data_name: <path to genomelake directory>}"
+        example: {"H3K27AC_subsampled": "example_files/H3K27AC_subsampled.bw"}
+        type: dict
+    target_data_sources:
+        doc: "optional; {data_name: <path to genomelake directory>}"
+        type: dict
+        optional: True
+    batch_size:
+        doc: "batch size. Default = 128"
+        example: 4
+        optional: True
+info:
+    authors:
+        - name: Johnny Israeli
+          github: jisraeli
+    name: extended CODA
+    version: 0.1
+    doc: DataLoader for single bp resolution ChIP-seq denoising
+dependencies:
+    pip:
+        - cython
+        - genomelake
+output_schema:
+    inputs:
+        H3K27AC_subsampled:
+            shape: (None, 1)  # TODO - update shape
+            special_type: bigwig
+            associated_metadata: ranges
+            doc: Input
+    # doesn't have to be defined
+    targets:
+        H3K27ac:
+            shape: (None, 1)
+            special_type: bigwig
+            doc: Measured track
+    metadata:
+        ranges:
+            chr:
+                type: str
+                doc: Chromosome
+            start:
+                type: int
+                doc: Start position
+            end:
+                type: int
+                doc: End position
+            id:
+                type: str
+                doc: Id of the sequence

@@ -192,6 +192,7 @@ class dummy_container(object):
 
 
 class DummyModelInfo(object):
+
     def __init__(self, seq_length):
         self.seq_length = seq_length
 
@@ -263,23 +264,23 @@ def test__modify_bases():
 
 
 def test__get_seq_fields():
-    model_dir = "examples/rbp/"
+    model_dir = "tests/models/rbp/"
     assert (
         kipoi.postprocessing.variant_effects.utils.generic._get_seq_fields(
             kipoi.get_model_descr(model_dir, source="dir")) == ['seq'])
-    model_dir = "examples/extended_coda/"
+    model_dir = "tests/models/extended_coda/"
     with pytest.raises(Exception):
         kipoi.postprocessing.variant_effects.utils.generic._get_seq_fields(
             kipoi.get_model_descr(model_dir, source="dir"))
 
 
 def test__get_dl_bed_fields():
-    model_dir = "examples/rbp/"
+    model_dir = "tests/models/rbp/"
     assert (
         kipoi.postprocessing.variant_effects.utils.generic._get_dl_bed_fields(
             kipoi.get_dataloader_descr(model_dir, source="dir")) == ['intervals_file'])
     # This is not valid anymore:
-    # model_dir = "examples/extended_coda/"
+    # model_dir = "tests/models/extended_coda/"
     # with pytest.raises(Exception):
     #    kipoi.postprocessing.utils.generic._get_dl_bed_fields(kipoi.get_dataloader_descr(model_dir, source="dir"))
 
@@ -342,7 +343,7 @@ def test_DNAStringArrayConverter():
 
 
 def test_search_vcf_in_regions():
-    vcf_path = kipoi.postprocessing.variant_effects.ensure_tabixed_vcf("examples/rbp/example_files/variants.vcf")
+    vcf_path = kipoi.postprocessing.variant_effects.ensure_tabixed_vcf("tests/models/rbp/example_files/variants.vcf")
     vcf_fh = cyvcf2.VCF(vcf_path, "r")
     ints1 = {"chr": ["chr22"] * 2, "start": [21541589, 30630701], "end": [21541953, 36702138], "strand": ["*"] * 2}
     ints2 = {"chr": ["chr22"] * 2, "start": [30630219, 30630220], "end": [30630222, 30630222], "strand": ["*"] * 2}
@@ -392,7 +393,7 @@ def test_get_genomicranges_line():
 def test_by_id_vcf_in_regions():
     from kipoi.postprocessing.variant_effects.utils.generic import default_vcf_id_gen
     from kipoi.postprocessing.variant_effects.snv_predict import get_variants_in_regions_sequential_vcf
-    vcf_path = kipoi.postprocessing.variant_effects.ensure_tabixed_vcf("examples/rbp/example_files/variants.vcf")
+    vcf_path = kipoi.postprocessing.variant_effects.ensure_tabixed_vcf("tests/models/rbp/example_files/variants.vcf")
     vcf_fh = cyvcf2.VCF(vcf_path, "r")
     ints1 = {"chr": [], "start": [], "end": [], "strand": [], "id": []}
     for rec in vcf_fh:
@@ -426,7 +427,7 @@ def test_by_id_vcf_in_regions():
 
 def test_get_preproc_conv():
     import itertools
-    vcf_path = kipoi.postprocessing.variant_effects.ensure_tabixed_vcf("examples/rbp/example_files/variants.vcf")
+    vcf_path = kipoi.postprocessing.variant_effects.ensure_tabixed_vcf("tests/models/rbp/example_files/variants.vcf")
     vcf_fh = cyvcf2.VCF(vcf_path, "r")
     ints1 = {"chr": ["chr22"] * 4, "start": [21541589, 30630701, 21541589, 200],
              "end": [21541953, 36702138, 21541953, 500], "strand": ["*"] * 4}
@@ -530,7 +531,7 @@ def test_OneHotSequenceMutator():
 def test_var_eff_pred_varseq():
     if sys.version_info[0] == 2:
         pytest.skip("rbp example not supported on python 2 ")
-    model_dir = "examples/var_seqlen_model/"
+    model_dir = "tests/models/var_seqlen_model/"
     if INSTALL_REQ:
         install_model_requirements(model_dir, "dir", and_dataloaders=True)
     #
@@ -544,7 +545,7 @@ def test_var_eff_pred_varseq():
         "gtf_file": "example_files/gencode_v25_chr22.gtf.pkl.gz",
         "intervals_file": "example_files/variant_centered_intervals.tsv"
     }
-    dataloader_arguments = {k:model_dir + v for k,v in dataloader_arguments.items()}
+    dataloader_arguments = {k: model_dir + v for k, v in dataloader_arguments.items()}
     vcf_path = model_dir + "example_files/variants.vcf"
     out_vcf_fpath = model_dir + "example_files/variants_generated.vcf"
     ref_out_vcf_fpath = model_dir + "example_files/variants_ref_out.vcf"
@@ -572,7 +573,7 @@ def test_var_eff_pred():
     if sys.version_info[0] == 2:
         pytest.skip("rbp example not supported on python 2 ")
     # Take the rbp model
-    model_dir = "examples/rbp/"
+    model_dir = "tests/models/rbp/"
     if INSTALL_REQ:
         install_model_requirements(model_dir, "dir", and_dataloaders=True)
     #
@@ -592,10 +593,10 @@ def test_var_eff_pred():
     out_vcf_fpath = model_dir + "example_files/variants_generated.vcf"
     ref_out_vcf_fpath = model_dir + "example_files/variants_ref_out.vcf"
     #
-    #with cd(model.source_dir):
+    # with cd(model.source_dir):
     model_info = kipoi.postprocessing.variant_effects.ModelInfoExtractor(model, Dataloader)
     writer = kipoi.postprocessing.variant_effects.VcfWriter(model, vcf_path, out_vcf_fpath,
-                                                            standardise_var_id = True)
+                                                            standardise_var_id=True)
     vcf_to_region = kipoi.postprocessing.variant_effects.SnvCenteredRg(model_info)
     res = sp.predict_snvs(model, Dataloader, vcf_path, dataloader_args=dataloader_arguments,
                           evaluation_function=analyse_model_preds, batch_size=32,
@@ -603,7 +604,7 @@ def test_var_eff_pred():
                           evaluation_function_kwargs={'diff_types': {'diff': Diff("mean")}},
                           sync_pred_writer=writer)
     writer.close()
-    #with cd(model.source_dir):
+    # with cd(model.source_dir):
     # pass
     # assert filecmp.cmp(out_vcf_fpath, ref_out_vcf_fpath)
     compare_vcfs(out_vcf_fpath, ref_out_vcf_fpath)
@@ -614,7 +615,7 @@ def test_var_eff_pred2():
     if sys.version_info[0] == 2:
         pytest.skip("rbp example not supported on python 2 ")
     # Take the rbp model
-    model_dir = "examples/rbp/"
+    model_dir = "tests/models/rbp/"
     if INSTALL_REQ:
         install_model_requirements(model_dir, "dir", and_dataloaders=True)
     #
@@ -635,19 +636,19 @@ def test_var_eff_pred2():
     ref_out_vcf_fpath = model_dir + "example_files/variants_ref_out2.vcf"
     restricted_regions_fpath = model_dir + "example_files/restricted_regions.bed"
     #
-    #with cd(model.source_dir):
+    # with cd(model.source_dir):
     pbd = pb.BedTool(restricted_regions_fpath)
     model_info = kipoi.postprocessing.variant_effects.ModelInfoExtractor(model, Dataloader)
     vcf_to_region = kipoi.postprocessing.variant_effects.SnvPosRestrictedRg(model_info, pbd)
     writer = kipoi.postprocessing.variant_effects.utils.io.VcfWriter(model, vcf_path, out_vcf_fpath,
-                                                                     standardise_var_id = True)
+                                                                     standardise_var_id=True)
     res = sp.predict_snvs(model, Dataloader, vcf_path, dataloader_args=dataloader_arguments,
                           evaluation_function=analyse_model_preds, batch_size=32,
                           vcf_to_region=vcf_to_region,
                           evaluation_function_kwargs={'diff_types': {'diff': Diff("mean")}},
                           sync_pred_writer=writer)
     writer.close()
-    #with cd(model.source_dir):
+    # with cd(model.source_dir):
     # pass
     # assert filecmp.cmp(out_vcf_fpath, ref_out_vcf_fpath)
     compare_vcfs(out_vcf_fpath, ref_out_vcf_fpath)
@@ -721,6 +722,7 @@ def test_output_reshaper():
 
 
 class Dummy_internval:
+
     def __init__(self):
         self.storage = {"chrom": [], "start": [], "end": [], "id": []}
 
@@ -739,7 +741,7 @@ def _write_regions_from_vcf(vcf_iter, vcf_id_generator_fn, int_write_fn, region_
 
 
 def test__generate_pos_restricted_seqs():
-    model_dir = "examples/rbp/"
+    model_dir = "tests/models/rbp/"
     vcf_path = model_dir + "example_files/variants.vcf"
     tuples = (([21541490, 21541591], [21541491, 21541591]),
               ([21541390, 21541891], [21541541, 21541641]),
@@ -775,7 +777,7 @@ def test_BedOverlappingRg():
 
 
 def test__generate_snv_centered_seqs():
-    model_dir = "examples/rbp/"
+    model_dir = "tests/models/rbp/"
     vcf_path = model_dir + "example_files/variants.vcf"
     model_info_extractor = DummyModelInfo(101)
     lct = 0
@@ -794,7 +796,7 @@ def test__generate_snv_centered_seqs():
     vcf_df.columns = hdr
     # Subset the VCF to SNVs:
     vcf_df = vcf_df.loc[(vcf_df["REF"].str.len() == 1) & (vcf_df["ALT"].str.len() == 1), :]
-    vcf_df = vcf_df.loc[vcf_df[["REF", "ALT"]].isin([".", b"."]).sum(axis=1)==0,:]
+    vcf_df = vcf_df.loc[vcf_df[["REF", "ALT"]].isin([".", b"."]).sum(axis=1) == 0, :]
     #
     for seq_length in [100, 101]:
         vcf_fh = cyvcf2.VCF(vcf_path, "r")
@@ -813,7 +815,7 @@ def test__generate_snv_centered_seqs():
 
 
 def test__generate_seq_sets():
-    model_dir = "examples/rbp/"
+    model_dir = "tests/models/rbp/"
     vcf_sub_path = "example_files/variants.vcf"
 
     vcf_path = model_dir + vcf_sub_path
@@ -989,7 +991,7 @@ def test_subsetting():
 
 
 def test_ensure_tabixed_vcf():
-    vcf_in_fpath = "examples/rbp/example_files/variants.vcf"
+    vcf_in_fpath = "tests/models/rbp/example_files/variants.vcf"
     vcf_path = kipoi.postprocessing.variant_effects.ensure_tabixed_vcf(vcf_in_fpath)
     assert os.path.exists(vcf_path)
     assert vcf_path.endswith(".gz")
@@ -1001,7 +1003,7 @@ def test_ensure_tabixed_vcf():
 
 
 def test__overlap_vcf_region():
-    vcf_path = kipoi.postprocessing.variant_effects.ensure_tabixed_vcf("examples/rbp/example_files/variants.vcf")
+    vcf_path = kipoi.postprocessing.variant_effects.ensure_tabixed_vcf("tests/models/rbp/example_files/variants.vcf")
     vcf_obj = cyvcf2.VCF(vcf_path)
     all_records = [rec for rec in vcf_obj]
     vcf_obj.close()
@@ -1037,7 +1039,7 @@ def test__overlap_vcf_region():
 
 """
 # Take the rbp model
-model_dir = "examples/rbp/"
+model_dir = "tests/models/rbp/"
 install_model_requirements(model_dir, "dir", and_dataloaders=True)
 
 model = kipoi.get_model(model_dir, source="dir")
@@ -1087,7 +1089,7 @@ def test_all_scoring_options_available():
     from kipoi.postprocessing.variant_effects.components import VarEffectFuncType
 
     assert {x.value for x in list(VarEffectFuncType)} == \
-           set(list(scoring_options.keys()) + ["custom"])
+        set(list(scoring_options.keys()) + ["custom"])
 
 
 def test_homogenise_seqname():
@@ -1107,7 +1109,7 @@ def test_get_vcf_to_region():
         pytest.skip("rbp example not supported on python 2 ")
     from kipoi.postprocessing.variant_effects import ModelInfoExtractor, SnvCenteredRg, SnvPosRestrictedRg
     from kipoi.postprocessing.variant_effects.snv_predict import _get_vcf_to_region
-    example_dir = "examples/rbp"
+    example_dir = "tests/models/rbp"
     model = kipoi.get_model(example_dir, source="dir")
     restr_bed = example_dir + "/example_files/restricted_regions.bed"
     dataloader = model.default_dataloader
@@ -1115,19 +1117,18 @@ def test_get_vcf_to_region():
     assert isinstance(_get_vcf_to_region(model_info, None, None), SnvCenteredRg)
     assert isinstance(_get_vcf_to_region(model_info, restr_bed, None), SnvPosRestrictedRg)
 
-    example_dir = "examples/non_bedinput_model"
+    example_dir = "tests/models/non_bedinput_model"
     model = kipoi.get_model(example_dir, source="dir")
     dataloader = model.default_dataloader
     model_info = ModelInfoExtractor(model, dataloader)
     assert _get_vcf_to_region(model_info, None, None) is None
 
 
-
 def test_score_variants():
     if sys.version_info[0] == 2:
         pytest.skip("rbp example not supported on python 2 ")
     # Take the rbp model
-    model_dir = "examples/rbp/"
+    model_dir = "tests/models/rbp/"
     if INSTALL_REQ:
         install_model_requirements(model_dir, "dir", and_dataloaders=True)
     #
@@ -1145,9 +1146,9 @@ def test_score_variants():
     out_vcf_fpath = model_dir + "example_files/variants_generated.vcf"
     ref_out_vcf_fpath = model_dir + "example_files/variants_ref_out.vcf"
 
-    #with cd(model.source_dir):
+    # with cd(model.source_dir):
     res = sp.score_variants(model, dataloader_arguments, vcf_path, out_vcf_fpath,
-                            scores=['diff'], score_kwargs=[{"rc_merging":"mean"}], source = "dir")
+                            scores=['diff'], score_kwargs=[{"rc_merging": "mean"}], source="dir")
 
     # pass
     #assert filecmp.cmp(out_vcf_fpath, ref_out_vcf_fpath)

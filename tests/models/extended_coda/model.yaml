@@ -1,0 +1,26 @@
+type: keras
+args:
+    weights: model_files/keras2/model.h5
+    backend: tensorflow
+info:
+    authors:
+        - name: Johnny Israeli
+          github: jisraeli
+    name: extended CODA
+    version: 0.1
+    doc: Single bp resolution ChIP-seq denoising
+dependencies:
+    pip:
+      - tensorflow>=1.0.0
+      - keras>2.0.4
+schema:
+    inputs:
+        H3K27AC_subsampled:
+            shape: (None, 1)  # TODO - update shape
+            special_type: bigwig
+            doc: Track representing ...
+    targets:
+        H3K27ac:
+            shape: (None, 1)  # TODO - update shape
+            special_type: bigwig
+            doc: Predicted track...
