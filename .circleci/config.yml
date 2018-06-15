@@ -1,0 +1,85 @@
+version: 2
+
+variables:
+  update_conda: &update_conda
+    run:
+      name: Update conda
+      command: conda update --yes conda
+  install_git_lfs: &install_git_lfs
+    run:
+      name: Install git-lfs
+      command: conda install --yes -c conda-forge git-lfs
+  # install_pip_deps: &install_pip_deps
+  #   run:
+  #     name: Install pip dependencies
+  #     command: pip install genomelake --no-deps
+  install_kipoi: &install_kipoi
+    run:
+      name: Install Kipoi-veff
+      command: pip install .
+  install_requests: &install_requests
+    run:
+      name: Install requirements for requests correctly
+      command: pip install requests
+  kipoi_ls: &kipoi_ls
+    run:
+      name: List kipoi packages
+      command: kipoi ls
+  run_tests: &run_tests
+    run:
+      name: Run tests
+      command: |
+        mkdir test-reports
+        py.test --cov=kipoi-veff/ tests/ -n 4 --no-cov-on-fail --junitxml=test-reports/junit.xml
+  run_coveralls: &run_coveralls
+    run:
+      name: run coveralls
+      command: coveralls || true
+  store_test_results: &store_test_results
+    store_test_results:
+      path: test-reports
+  store_test_artifacts: &store_test_artifacts
+    store_artifacts:
+      path: test-reports
+      destination: test-reports
+
+
+jobs:
+
+  test-py36:
+    docker:
+      - image: kipoi/miniconda3:4.3.14
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - *update_conda
+      # - *install_pip_deps
+      - *install_kipoi
+      # - *kipoi_ls
+      - *run_tests
+      - *run_coveralls
+      - *store_test_results
+      - *store_test_artifacts
+
+  test-py27:
+    docker:
+      - image: kipoi/miniconda:4.3.14
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - *update_conda
+      # - *install_pip_deps
+      - *install_kipoi
+      # - *kipoi_ls
+      - *run_tests
+      - *store_test_results
+      - *store_test_artifacts
+
+
+workflows:
+  version: 2
+
+  test:
+    jobs:
+      - test-py36
+      - test-py27
