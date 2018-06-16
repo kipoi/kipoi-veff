@@ -9,7 +9,7 @@ import abc
 import kipoi
 import logging
 import six
-from kipoi.postprocessing.variant_effects.components import VarEffectFuncType
+from kipoi_veff.components import VarEffectFuncType
 from kipoi.utils import load_module, getargs, parse_json_file_str
 
 logger = logging.getLogger(__name__)
@@ -61,6 +61,7 @@ class RCScore(Score):
 
 
 class Logit(RCScore):
+
     def __call__(self, ref, alt, ref_rc=None, alt_rc=None):
         preds = {"ref": ref, "ref_rc": ref_rc, "alt": alt, "alt_rc": alt_rc}
         if np.any([(preds[k].min() < 0 or preds[k].max() > 1) for k in preds if preds[k] is not None]):
@@ -75,6 +76,7 @@ class Logit(RCScore):
 
 
 class LogitAlt(RCScore):
+
     def __call__(self, ref, alt, ref_rc=None, alt_rc=None):
         preds = {"ref": ref, "ref_rc": ref_rc, "alt": alt, "alt_rc": alt_rc}
         if np.any([(preds[k].min() < 0 or preds[k].max() > 1) for k in preds if preds[k] is not None]):
@@ -89,6 +91,7 @@ class LogitAlt(RCScore):
 
 
 class LogitRef(RCScore):
+
     def __call__(self, ref, alt, ref_rc=None, alt_rc=None):
         preds = {"ref": ref, "ref_rc": ref_rc, "alt": alt, "alt_rc": alt_rc}
         if np.any([(preds[k].min() < 0 or preds[k].max() > 1) for k in preds if preds[k] is not None]):
@@ -103,6 +106,7 @@ class LogitRef(RCScore):
 
 
 class Alt(RCScore):
+
     def __call__(self, ref, alt, ref_rc=None, alt_rc=None):
         alt_out = alt
         if alt_rc is not None:
@@ -111,6 +115,7 @@ class Alt(RCScore):
 
 
 class Ref(RCScore):
+
     def __call__(self, ref, alt, ref_rc=None, alt_rc=None):
         ref_out = ref
         if ref_rc is not None:
@@ -119,6 +124,7 @@ class Ref(RCScore):
 
 
 class Diff(RCScore):
+
     def __call__(self, ref, alt, ref_rc=None, alt_rc=None):
         preds = {"ref": ref, "ref_rc": ref_rc, "alt": alt, "alt_rc": alt_rc}
         diffs = preds["alt"] - preds["ref"]
@@ -131,6 +137,7 @@ class Diff(RCScore):
 
 
 class DeepSEA_effect(RCScore):
+
     def __call__(self, ref, alt, ref_rc=None, alt_rc=None):
         preds = {"ref": ref, "ref_rc": ref_rc, "alt": alt, "alt_rc": alt_rc}
         if np.any([(preds[k].min() < 0 or preds[k].max() > 1) for k in preds if preds[k] is not None]):
@@ -279,7 +286,7 @@ def get_scoring_fns(model, scoring_fns, scoring_kwargs=None):
     """
     Transform a list of scoring functions and names to a dictionary of scoring functions that are set up with kwargs
     defined in scoring_kwargs.
-    
+
     Arguments
         model: Kipoi Model object
         scoring_fns: A list of scoring functions or strings of scoring functions. 
@@ -290,7 +297,7 @@ def get_scoring_fns(model, scoring_fns, scoring_kwargs=None):
     """
     # get the scoring methods according to the model definition
     avail_scoring_fns, avail_scoring_fn_def_args, avail_scoring_fn_names, \
-    default_scoring_fns = get_avail_scoring_fns(model)
+        default_scoring_fns = get_avail_scoring_fns(model)
 
     errmsg_scoring_kwargs = "When using `scoring_kwargs` a kwargs dictionary for every entry in " \
                             "`scoring_kwargs` must be given."

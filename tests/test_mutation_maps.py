@@ -2,24 +2,25 @@ import sys
 import copy
 import warnings
 import pytest
+import kipoi_veff
 from kipoi.readers import HDF5Reader
 from kipoi.pipeline import install_model_requirements
 from kipoi.utils import cd
 import kipoi
-from kipoi.postprocessing.variant_effects import Logit, Diff, DeepSEA_effect, analyse_model_preds
+from kipoi_veff import Logit, Diff, DeepSEA_effect, analyse_model_preds
 import cyvcf2
 from kipoi.metadata import GenomicRanges
 import pandas as pd
 import numpy as np
-from kipoi.postprocessing.variant_effects.utils import OneHotSeqExtractor, StrSeqExtractor
+from kipoi_veff.utils import OneHotSeqExtractor, StrSeqExtractor
 import h5py
 import os
 from config import install_req as INSTALL_REQ
 
 warnings.filterwarnings('ignore')
-from kipoi.postprocessing.variant_effects import mutation_map as mm
-from kipoi.postprocessing.variant_effects import snv_predict as sp
-from kipoi.postprocessing.variant_effects.utils import is_indel_wrapper
+from kipoi_veff import mutation_map as mm
+from kipoi_veff import snv_predict as sp
+from kipoi_veff.utils import is_indel_wrapper
 
 
 class DummyModelInfo(object):
@@ -76,7 +77,7 @@ def test__overlap_bedtools_region():
     ins = [True, True, False]
     for start, end, isin in zip(starts, ends, ins):
         regions = dict(start=[start], end=[end], chr=["chr22"])
-        bed_regions, contained_regions = kipoi.postprocessing.variant_effects.mutation_map._overlap_bedtools_region(
+        bed_regions, contained_regions = kipoi_veff.mutation_map._overlap_bedtools_region(
             bobj, regions)
         if isin:
             assert len(bed_regions) == 1
@@ -88,7 +89,7 @@ def test__overlap_bedtools_region():
 
 def test_get_overlapping_bed_regions():
     from pybedtools import BedTool
-    from kipoi.postprocessing.variant_effects.mutation_map import get_overlapping_bed_regions
+    from kipoi_veff.mutation_map import get_overlapping_bed_regions
     bobj = BedTool("chr22 21541588 21541689\nchr22 30630220 30630702", from_string=True).tabix()
     ints1 = {"chr": ["chr22"] * 2, "start": [21541589, 30630701], "end": [21541953, 36702138], "strand": ["*"] * 2}
     ints2 = {"chr": ["chr22"] * 2, "start": [30630219, 30630220], "end": [30630222, 30630222], "strand": ["*"] * 2}
@@ -110,7 +111,7 @@ def test_get_variants_for_all_positions():
     model_input = {"metadata": {"gr_a": ints1, "gr_b": ints1, "gr_c": ints2}}
     ref_seqs = {"gr_a": seqs1, "gr_b": seqs1, "gr_c": seqs2}
     seq_to_meta = {"seq_a": "gr_a", "seq_a2": "gr_a", "seq_b": "gr_b", "seq_c": "gr_c"}
-    vcf_records, process_lines, process_seq_fields = kipoi.postprocessing.variant_effects.mutation_map.get_variants_for_all_positions(
+    vcf_records, process_lines, process_seq_fields = kipoi_veff.mutation_map.get_variants_for_all_positions(
         model_input, seq_to_meta, ref_seqs)
     # Check that every position has been ticked.
     ints1_ticked = [[], []]
@@ -146,7 +147,7 @@ def test__generate_seq_sets_mutmap_iter():
     model_dir = "tests/models/rbp/"
     vcf_sub_path = "example_files/variants.vcf"
     vcf_path = model_dir + vcf_sub_path
-    vcf_path = kipoi.postprocessing.variant_effects.ensure_tabixed_vcf(vcf_path)
+    vcf_path = kipoi_veff.ensure_tabixed_vcf(vcf_path)
     # for any given input type: list, dict and np.array return 4 identical sets, except for mutated bases on one position
     seq_len = 101
     model_info_extractor = DummyModelInfo(seq_len)
@@ -161,8 +162,8 @@ def test__generate_seq_sets_mutmap_iter():
         regions = Dummy_internval()
         #
         model_info_extractor.seq_length = seq_len
-        region_generator = kipoi.postprocessing.variant_effects.utils.generic.SnvCenteredRg(model_info_extractor)
-        _write_regions_from_vcf(vcf_fh, kipoi.postprocessing.variant_effects.utils.generic.default_vcf_id_gen,
+        region_generator = kipoi_veff.utils.generic.SnvCenteredRg(model_info_extractor)
+        _write_regions_from_vcf(vcf_fh, kipoi_veff.utils.generic.default_vcf_id_gen,
                                 regions.append_interval, region_generator)
         #
         vcf_fh.close()
@@ -184,7 +185,7 @@ def test__generate_seq_sets_mutmap_iter():
         #
         meta_data_options = [gr_meta, dict_meta]
         #
-        seq_to_mut = {"seq": kipoi.postprocessing.variant_effects.utils.generic.OneHotSequenceMutator()}
+        seq_to_mut = {"seq": kipoi_veff.utils.generic.OneHotSequenceMutator()}
         seq_to_meta = {"seq": "ranges"}
         n_qseq = annotated_regions.shape[0]
         for batch_size in [4, 8]:

@@ -1,7 +1,7 @@
 from kipoi.components import PostProcModelStruct
 from related import from_yaml
 import pytest
-from kipoi.postprocessing.variant_effects.scores import get_avail_scoring_fns, get_scoring_fns, \
+from kipoi_veff.scores import get_avail_scoring_fns, get_scoring_fns, \
     builtin_default_kwargs
 from kipoi.postprocessing import variant_effects as ve
 
@@ -118,7 +118,7 @@ def test_ret():
     model = dummy_container()
     model.postprocessing = pps
     avail_scoring_fns, avail_scoring_fn_def_args, avail_scoring_fn_names,\
-    default_scoring_fns = get_avail_scoring_fns(model)
+        default_scoring_fns = get_avail_scoring_fns(model)
 
 
 postproc_yaml_nofndef = """

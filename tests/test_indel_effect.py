@@ -1,5 +1,5 @@
 import kipoi
-import kipoi.postprocessing.variant_effects as ve
+import kipoi_veff as ve
 import numpy as np
 import pytest
 import sys

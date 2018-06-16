@@ -1,11 +1,11 @@
 from kipoi.components import ModelDescription, DataLoaderDescription
 from related import from_yaml
-from kipoi.postprocessing.variant_effects.utils.generic import ModelInfoExtractor, OneHotSequenceMutator, \
+from kipoi_veff.utils.generic import ModelInfoExtractor, OneHotSequenceMutator, \
     DNAStringSequenceMutator, ReshapeDnaString, ReshapeDna
 from related import from_yaml
 
 from kipoi.components import ModelDescription, DataLoaderDescription
-from kipoi.postprocessing.variant_effects.utils.generic import ModelInfoExtractor, OneHotSequenceMutator, \
+from kipoi_veff.utils.generic import ModelInfoExtractor, OneHotSequenceMutator, \
     DNAStringSequenceMutator, ReshapeDnaString, ReshapeDna
 
 dataloader_yaml = """

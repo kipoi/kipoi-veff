@@ -12,6 +12,9 @@ def center_cmap(cmap, vmax, vmin, center):
     return mpl.colors.ListedColormap(cmap(cc))
 
 
+# TODO - shall we move this to the interepret library?
+
+
 def seqlogo_heatmap(letter_heights, heatmap_data, ovlp_var=None, vocab="DNA", ax=None, show_letter_scale=False,
                     cmap=None, cbar=True, cbar_kws=None, cbar_ax=None, limit_region=None, var_box_color="black",
                     show_var_id=True):

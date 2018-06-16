@@ -8,9 +8,9 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from kipoi.postprocessing.variant_effects import BedOverlappingRg, SnvCenteredRg, ensure_tabixed_vcf
-from kipoi.postprocessing.variant_effects.scores import Logit, get_scoring_fns
-from kipoi.postprocessing.variant_effects.utils import select_from_dl_batch, OutputReshaper, default_vcf_id_gen, \
+from kipoi_veff import BedOverlappingRg, SnvCenteredRg, ensure_tabixed_vcf
+from kipoi_veff.scores import Logit, get_scoring_fns
+from kipoi_veff.utils import select_from_dl_batch, OutputReshaper, default_vcf_id_gen, \
     ModelInfoExtractor, BedWriter, VariantLocalisation
 from kipoi.utils import cd
 from .snv_predict import SampleCounter, get_genomicranges_line, merge_intervals, get_variants_in_regions_search_vcf, \
@@ -386,6 +386,7 @@ def get_ref_seq_from_seq_set(input_set, seq_to_meta, seq_to_str_converter, dl_ou
 
 
 class MutationMapDataMerger(object):
+
     def __init__(self, seq_to_meta):
         self.predictions = []
         self.pred_sets = []
@@ -426,7 +427,7 @@ class MutationMapDataMerger(object):
                     metadata_subset = get_genomicranges_line(batch_metadata[metadata_key], process_line)
                     subset_keys = ["chr", "start", "end", "strand"]
                     if not (isinstance(metadata_subset["strand"], list) or
-                                isinstance(metadata_subset["strand"], np.ndarray)):
+                            isinstance(metadata_subset["strand"], np.ndarray)):
                         subset_keys = ["chr", "start", "end"]
                     metadata_subset_dict = {k: metadata_subset[k][0] for k in subset_keys}
                     if "strand" not in metadata_subset_dict:
@@ -487,7 +488,7 @@ class MutationMapDataMerger(object):
 
     def save_to_file(self, fname):
         # Best is to use a hdf5 file
-        from kipoi.postprocessing.variant_effects.utils.generic import write_hdf5
+        from kipoi_veff.utils.generic import write_hdf5
         return write_hdf5(fname, self.get_merged_data())
 
     def to_plotter(self):
@@ -495,18 +496,19 @@ class MutationMapDataMerger(object):
 
 
 class MutationMapPlotter(object):
+
     def __init__(self, mutation_map=None, fname=None):
         if mutation_map is None and fname is None:
             raise Exception("Either mutation_map or fname for a mutation_map file has to be given")
         if mutation_map is not None:
             self.mutation_map = mutation_map
         elif fname is not None:
-            from kipoi.postprocessing.variant_effects.utils.generic import read_hdf5
+            from kipoi_veff.utils.generic import read_hdf5
             self.mutation_map = read_hdf5(fname)
 
     def save_to_file(self, fname):
         # Best is to use a hdf5 file
-        from kipoi.postprocessing.variant_effects.utils.generic import write_hdf5
+        from kipoi_veff.utils.generic import write_hdf5
         return write_hdf5(fname, self.mutation_map)
 
     def plot_mutmap(self, input_entry, model_seq_input, scoring_key, model_output, ax=None, show_letter_scale=False,
@@ -547,7 +549,7 @@ class MutationMapPlotter(object):
                 ovlp_var['alt'].append(alt)
 
         from kipoi.external.concise.seqplotting_deps import encodeDNA
-        from kipoi.postprocessing.variant_effects.utils.plot import seqlogo_heatmap
+        from kipoi_veff.utils.plot import seqlogo_heatmap
         import matplotlib.pyplot as plt
         if cmap is None:
             cmap = plt.cm.bwr
@@ -645,6 +647,7 @@ class MutationMapPlotter(object):
 
 
 class MutationMap(object):
+
     def __init__(self, model, dataloader, dataloader_args=None, use_dataloader_example_data=False):
         """Generate mutation map
 
@@ -923,7 +926,7 @@ class MutationMap(object):
             end: End of region of interest. Assembly is defined by the dataload arguments.
             seq_length: Optional argument of model sequence length to use if model accepts variable input
             sequence length.
-            scores: list of score names to compute. See kipoi.postprocessing.variant_effects.scores
+            scores: list of score names to compute. See kipoi_veff.scores
             score_kwargs: optional, list of kwargs that corresponds to the entries in score.
 
         # Returns
@@ -965,7 +968,7 @@ class MutationMap(object):
                 regions based this (`bed_fpath`) bed file. Assembly is defined by the dataload arguments.
             seq_length: Optional argument of model sequence length to use if model accepts variable input
                 sequence length.
-            scores: list of score names to compute. See kipoi.postprocessing.variant_effects.scores
+            scores: list of score names to compute. See kipoi_veff.scores
             score_kwargs: optional, list of kwargs that corresponds to the entries in score.
 
         # Returns
@@ -1011,7 +1014,7 @@ class MutationMap(object):
                 sequence length.
             var_centered_regions: Generate variant-centered regions if the model accepts that. If a custom
                 `vcf_to_region` should be used then this can be set explicitly in the kwargs.
-            scores: list of score names to compute. See kipoi.postprocessing.variant_effects.scores
+            scores: list of score names to compute. See kipoi_veff.scores
             score_kwargs: optional, list of kwargs that corresponds to the entries in score.
 
         # Returns

@@ -9,10 +9,11 @@ import pandas as pd
 import six
 from tqdm import tqdm
 
-from kipoi.postprocessing.variant_effects.scores import Logit, get_scoring_fns
-from kipoi.postprocessing.variant_effects.utils import select_from_dl_batch, OutputReshaper, default_vcf_id_gen, \
+import kipoi_veff
+from kipoi_veff.scores import Logit, get_scoring_fns
+from kipoi_veff.utils import select_from_dl_batch, OutputReshaper, default_vcf_id_gen, \
     ModelInfoExtractor, BedWriter, VariantLocalisation, ensure_tabixed_vcf
-from kipoi.postprocessing.variant_effects.utils.io import VcfWriter
+from kipoi_veff.utils.io import VcfWriter
 from .utils import is_indel_wrapper
 from kipoi.utils import cd
 
@@ -267,7 +268,7 @@ def get_variants_df(seq_key, ranges_input_obj, vcf_records, process_lines, proce
                     "do_mutate": []}
 
     if ("strand" in ranges_input_obj) and (isinstance(ranges_input_obj["strand"], list) or
-                                               isinstance(ranges_input_obj["strand"], np.ndarray)):
+                                           isinstance(ranges_input_obj["strand"], np.ndarray)):
         preproc_conv["strand"] = []
 
     for i, record in enumerate(vcf_records):
@@ -283,7 +284,7 @@ def get_variants_df(seq_key, ranges_input_obj, vcf_records, process_lines, proce
             pre_new_vals["end"] = ranges_input_obj["end"][ranges_input_i]
             pre_new_vals["varpos_rel"] = int(record.POS) - pre_new_vals["start"]
             if not ((pre_new_vals["varpos_rel"] < 0) or
-                        (pre_new_vals["varpos_rel"] > (pre_new_vals["end"] - pre_new_vals["start"] + 1))):
+                    (pre_new_vals["varpos_rel"] > (pre_new_vals["end"] - pre_new_vals["start"] + 1))):
 
                 # If variant lies in the region then continue
                 pre_new_vals["do_mutate"] = True
@@ -314,6 +315,7 @@ def get_variants_df(seq_key, ranges_input_obj, vcf_records, process_lines, proce
 
 
 class SampleCounter():
+
     def __init__(self):
         self.sample_it_counter = 0
 
@@ -651,12 +653,12 @@ def _get_vcf_to_region(model_info, restriction_bed, seq_length):
     if restriction_bed is not None:
         # Select the restricted SNV-centered region generator
         pbd = pybedtools.BedTool(restriction_bed)
-        vcf_to_region = kipoi.postprocessing.variant_effects.SnvPosRestrictedRg(model_info, pbd)
+        vcf_to_region = kipoi_veff.SnvPosRestrictedRg(model_info, pbd)
         logger.info('Restriction bed file defined. Only variants in defined regions will be tested.'
                     'Only defined regions will be tested.')
     elif model_info.requires_region_definition:
         # Select the SNV-centered region generator
-        vcf_to_region = kipoi.postprocessing.variant_effects.SnvCenteredRg(model_info, seq_length=seq_length)
+        vcf_to_region = kipoi_veff.SnvCenteredRg(model_info, seq_length=seq_length)
         logger.info('Using variant-centered sequence generation.')
     else:
         # No regions can be defined for the given model, VCF overlap will be inferred, hence tabixed VCF is necessary
@@ -686,7 +688,7 @@ def score_variants(model,
       dl_args: dataloader arguments as a dictionary
       input_vcf: input vcf file path
       output_vcf: output vcf file path
-      scores: list of score names to compute. See kipoi.postprocessing.variant_effects.scores
+      scores: list of score names to compute. See kipoi_veff.scores
       score_kwargs: optional, list of kwargs that corresponds to the entries in score. For details see 
       num_workers: number of paralell workers to use for dataloading
       batch_size: batch_size for dataloading
@@ -710,7 +712,7 @@ def score_variants(model,
     dts = get_scoring_fns(model, scores, score_kwargs)
 
     # Load effect prediction related model info
-    model_info = kipoi.postprocessing.variant_effects.ModelInfoExtractor(model, Dataloader)
+    model_info = kipoi_veff.ModelInfoExtractor(model, Dataloader)
     vcf_to_region = _get_vcf_to_region(model_info, restriction_bed, seq_length)
 
     return predict_snvs(model,

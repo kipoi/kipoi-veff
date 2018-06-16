@@ -9,10 +9,10 @@ variables:
     run:
       name: Install git-lfs
       command: conda install --yes -c conda-forge git-lfs
-  # install_pip_deps: &install_pip_deps
-  #   run:
-  #     name: Install pip dependencies
-  #     command: pip install genomelake --no-deps
+  install_pip_deps: &install_pip_deps
+    run:
+      name: Install pip dependencies
+      command: pip install genomelake --no-deps
   install_kipoi: &install_kipoi
     run:
       name: Install Kipoi-veff
@@ -53,9 +53,9 @@ jobs:
     steps:
       - checkout
       - *update_conda
-      # - *install_pip_deps
+      - *install_pip_deps
       - *install_kipoi
-      # - *kipoi_ls
+      - *kipoi_ls
       - *run_tests
       - *run_coveralls
       - *store_test_results
@@ -68,9 +68,9 @@ jobs:
     steps:
       - checkout
       - *update_conda
-      # - *install_pip_deps
+      - *install_pip_deps
       - *install_kipoi
-      # - *kipoi_ls
+      - *kipoi_ls
       - *run_tests
       - *store_test_results
       - *store_test_artifacts

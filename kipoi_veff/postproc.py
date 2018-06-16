@@ -9,9 +9,10 @@ import os
 import sys
 
 import kipoi
+import kipoi_veff
 from kipoi.cli.parser_utils import add_model, add_dataloader, file_exists, dir_exists
-from kipoi.postprocessing.variant_effects.components import VarEffectFuncType
-from kipoi.postprocessing.variant_effects.scores import get_scoring_fns
+from kipoi_veff.components import VarEffectFuncType
+from kipoi_veff.scores import get_scoring_fns
 from kipoi import writers
 from kipoi.utils import cd
 from kipoi.utils import parse_json_file_str
@@ -181,7 +182,7 @@ def cli_score_variants(command, raw_args):
             Dl = model.default_dataloader
 
         # Load effect prediction related model info
-        model_info = kipoi.postprocessing.variant_effects.ModelInfoExtractor(model, Dl)
+        model_info = kipoi_veff.ModelInfoExtractor(model, Dl)
 
         if model_info.use_seq_only_rc:
             logger.info('Model SUPPORTS simple reverse complementation of input DNA sequences.')
@@ -191,18 +192,18 @@ def cli_score_variants(command, raw_args):
         if output_vcf_model is not None:
             logger.info('Annotated VCF will be written to %s.' % str(output_vcf_model))
 
-        res[model_name_safe] = kipoi.postprocessing.variant_effects.score_variants(model,
-                                                                                   dataloader_arguments,
-                                                                                   args.input_vcf,
-                                                                                   output_vcf_model,
-                                                                                   scores=args.scores,
-                                                                                   score_kwargs=score_kwargs,
-                                                                                   num_workers=args.num_workers,
-                                                                                   batch_size=args.batch_size,
-                                                                                   seq_length=seq_length,
-                                                                                   std_var_id=args.std_var_id,
-                                                                                   restriction_bed=args.restriction_bed,
-                                                                                   return_predictions=keep_predictions)
+        res[model_name_safe] = kipoi_veff.score_variants(model,
+                                                         dataloader_arguments,
+                                                         args.input_vcf,
+                                                         output_vcf_model,
+                                                         scores=args.scores,
+                                                         score_kwargs=score_kwargs,
+                                                         num_workers=args.num_workers,
+                                                         batch_size=args.batch_size,
+                                                         seq_length=seq_length,
+                                                         std_var_id=args.std_var_id,
+                                                         restriction_bed=args.restriction_bed,
+                                                         return_predictions=keep_predictions)
 
     # tabular files
     if keep_predictions:
@@ -325,7 +326,6 @@ def cli_grad(command, raw_args):
     #    logger.warn("Interpreting `--layer` value as integer layer index!")
     #    layer = int(args.layer)
 
-
     # load model & dataloader
     model = kipoi.get_model(args.model, args.source)
 
@@ -419,7 +419,7 @@ def cli_grad_to_file(command, raw_args):
     import matplotlib.pyplot
     matplotlib.pyplot.switch_backend('agg')
     import matplotlib.pylab as plt
-    from kipoi.postprocessing.variant_effects.mutation_map import MutationMapPlotter
+    from kipoi_veff.mutation_map import MutationMapPlotter
     from kipoi.postprocessing.gradient_vis.vis import GradPlotter
     from kipoi.writers import BedGraphWriter
 
@@ -519,7 +519,7 @@ def cli_create_mutation_map(command, raw_args):
     dts = get_scoring_fns(model, args.scores, args.score_kwargs)
 
     # Load effect prediction related model info
-    model_info = kipoi.postprocessing.variant_effects.ModelInfoExtractor(model, Dl)
+    model_info = kipoi_veff.ModelInfoExtractor(model, Dl)
     manual_seq_len = args.seq_length
 
     # Select the appropriate region generator and vcf or bed file input
@@ -532,12 +532,12 @@ def cli_create_mutation_map(command, raw_args):
         vcf_region_file = regions_file
         if model_info.requires_region_definition:
             # Select the SNV-centered region generator
-            vcf_to_region = kipoi.postprocessing.variant_effects.SnvCenteredRg(model_info, seq_length=manual_seq_len)
+            vcf_to_region = kipoi_veff.SnvCenteredRg(model_info, seq_length=manual_seq_len)
             logger.info('Using variant-centered sequence generation.')
     elif args.file_format == "bed":
         if model_info.requires_region_definition:
             # Select the SNV-centered region generator
-            bed_to_region = kipoi.postprocessing.variant_effects.BedOverlappingRg(model_info, seq_length=manual_seq_len)
+            bed_to_region = kipoi_veff.BedOverlappingRg(model_info, seq_length=manual_seq_len)
             logger.info('Using bed-file based sequence generation.')
         bed_region_file = regions_file
     else:
@@ -548,7 +548,7 @@ def cli_create_mutation_map(command, raw_args):
     else:
         logger.info('Model DOES NOT support simple reverse complementation of input DNA sequences.')
 
-    from kipoi.postprocessing.variant_effects.mutation_map import _generate_mutation_map
+    from kipoi_veff.mutation_map import _generate_mutation_map
     mdmm = _generate_mutation_map(model,
                                   Dl,
                                   vcf_fpath=vcf_region_file,
@@ -599,7 +599,7 @@ def cli_plot_mutation_map(command, raw_args):
     import matplotlib.pyplot
     matplotlib.pyplot.switch_backend('agg')
     import matplotlib.pylab as plt
-    from kipoi.postprocessing.variant_effects.mutation_map import MutationMapPlotter
+    from kipoi_veff.mutation_map import MutationMapPlotter
 
     logger.info('Loading mutation map file...')
 

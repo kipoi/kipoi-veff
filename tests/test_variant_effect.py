@@ -12,18 +12,19 @@ from scipy.special import logit
 
 import config
 import kipoi
-import kipoi.postprocessing.variant_effects as ve
-import kipoi.postprocessing.variant_effects.snv_predict as sp
-import kipoi.postprocessing.variant_effects.utils.generic
-import kipoi.postprocessing.variant_effects.utils.io
+import kipoi_veff
+import kipoi_veff as ve
+import kipoi_veff.snv_predict as sp
+import kipoi_veff.utils.generic
+import kipoi_veff.utils.io
 from kipoi.metadata import GenomicRanges
 from kipoi.pipeline import install_model_requirements
-from kipoi.postprocessing.variant_effects import Logit, Diff, DeepSEA_effect, analyse_model_preds
-from kipoi.postprocessing.variant_effects.scores import RCScore, scoring_options
-from kipoi.postprocessing.variant_effects.utils.mutators import rc_str, _modify_single_string_base
+from kipoi_veff import Logit, Diff, DeepSEA_effect, analyse_model_preds
+from kipoi_veff.scores import RCScore, scoring_options
+from kipoi_veff.utils.mutators import rc_str, _modify_single_string_base
 from kipoi.utils import cd
-from kipoi.postprocessing.variant_effects.utils import is_indel_wrapper
-from kipoi.postprocessing.variant_effects.snv_predict import homogenise_seqname
+from kipoi_veff.utils import is_indel_wrapper
+from kipoi_veff.snv_predict import homogenise_seqname
 import os
 import copy
 
@@ -31,7 +32,7 @@ warnings.filterwarnings('ignore')
 
 from kipoi.components import ArraySchema, ModelSchema
 from related import from_yaml
-from kipoi.postprocessing.variant_effects.utils import OutputReshaper
+from kipoi_veff.utils import OutputReshaper
 from utils import compare_vcfs
 
 CLS = ArraySchema
@@ -266,18 +267,18 @@ def test__modify_bases():
 def test__get_seq_fields():
     model_dir = "tests/models/rbp/"
     assert (
-        kipoi.postprocessing.variant_effects.utils.generic._get_seq_fields(
+        kipoi_veff.utils.generic._get_seq_fields(
             kipoi.get_model_descr(model_dir, source="dir")) == ['seq'])
     model_dir = "tests/models/extended_coda/"
     with pytest.raises(Exception):
-        kipoi.postprocessing.variant_effects.utils.generic._get_seq_fields(
+        kipoi_veff.utils.generic._get_seq_fields(
             kipoi.get_model_descr(model_dir, source="dir"))
 
 
 def test__get_dl_bed_fields():
     model_dir = "tests/models/rbp/"
     assert (
-        kipoi.postprocessing.variant_effects.utils.generic._get_dl_bed_fields(
+        kipoi_veff.utils.generic._get_dl_bed_fields(
             kipoi.get_dataloader_descr(model_dir, source="dir")) == ['intervals_file'])
     # This is not valid anymore:
     # model_dir = "tests/models/extended_coda/"
@@ -296,7 +297,7 @@ def test_dna_reshaper():
                     seq_dim = np.where(np.array(in_shape) == seq_len)[0][0]
                     if undef_seqlen_schema:
                         input_shape = tuple([el if el != seq_len else None for el in list(input_shape)])
-                    reshaper_obj = kipoi.postprocessing.variant_effects.utils.generic.ReshapeDna(input_shape)
+                    reshaper_obj = kipoi_veff.utils.generic.ReshapeDna(input_shape)
                     reshaped = reshaper_obj.to_standard(start)
                     reshaped_2 = reshaper_obj.from_standard(reshaped)
                     assert (np.all(start == reshaped_2))
@@ -328,7 +329,7 @@ def test_DNAStringArrayConverter():
     in_str = [np.array("ACGTAGCT"), np.array(["ACGTAGCT"]), np.array(list("ACGTAGCT"))]
     for shape, arr in zip(in_shape, in_str):
         for add_batch_axis in [True, False]:
-            conv = kipoi.postprocessing.variant_effects.utils.generic.ReshapeDnaString(shape)
+            conv = kipoi_veff.utils.generic.ReshapeDnaString(shape)
             arr_here = copy.copy(arr)
             if add_batch_axis:
                 arr_here = arr_here[None, ...]
@@ -339,17 +340,17 @@ def test_DNAStringArrayConverter():
             assert np.all(arr_back == arr_here)
     # Any shape that has a length other than 0 or 1 is not allowed.
     with pytest.raises(Exception):
-        conv = kipoi.postprocessing.variant_effects.utils.generic.ReshapeDnaString((1, 8))
+        conv = kipoi_veff.utils.generic.ReshapeDnaString((1, 8))
 
 
 def test_search_vcf_in_regions():
-    vcf_path = kipoi.postprocessing.variant_effects.ensure_tabixed_vcf("tests/models/rbp/example_files/variants.vcf")
+    vcf_path = kipoi_veff.ensure_tabixed_vcf("tests/models/rbp/example_files/variants.vcf")
     vcf_fh = cyvcf2.VCF(vcf_path, "r")
     ints1 = {"chr": ["chr22"] * 2, "start": [21541589, 30630701], "end": [21541953, 36702138], "strand": ["*"] * 2}
     ints2 = {"chr": ["chr22"] * 2, "start": [30630219, 30630220], "end": [30630222, 30630222], "strand": ["*"] * 2}
     model_input = {"metadata": {"gr_a": ints1, "gr_b": ints1, "gr_c": ints2}}
     seq_to_meta = {"seq_a": "gr_a", "seq_a2": "gr_a", "seq_b": "gr_b", "seq_c": "gr_c"}
-    vcf_records, process_lines, process_seq_fields = kipoi.postprocessing.variant_effects.snv_predict.get_variants_in_regions_search_vcf(
+    vcf_records, process_lines, process_seq_fields = kipoi_veff.snv_predict.get_variants_in_regions_search_vcf(
         model_input, seq_to_meta, vcf_fh)
     assert process_lines == [0, 0, 0, 1, 1]
     expected = [['seq_a2', 'seq_a', 'seq_b'], ['seq_a2', 'seq_a', 'seq_b'], ['seq_c'],
@@ -362,7 +363,7 @@ def test_search_vcf_in_regions():
 
 
 def test_merge_intervals():
-    from kipoi.postprocessing.variant_effects.snv_predict import merge_intervals
+    from kipoi_veff.snv_predict import merge_intervals
     ints1 = {"chr": ["chr1"], "start": [1234], "end": [2345], "strand": ["*"]}
     ints2 = {"chr": ["chr2"], "start": [1234], "end": [2345], "strand": ["*"]}
     ints3 = {"chr": ["chr1"], "start": [2345], "end": [2888], "strand": ["*"]}
@@ -381,7 +382,7 @@ def test_merge_intervals():
 
 
 def test_get_genomicranges_line():
-    from kipoi.postprocessing.variant_effects.snv_predict import get_genomicranges_line
+    from kipoi_veff.snv_predict import get_genomicranges_line
     ints = {"chr": ["chr1", "chr2"], "start": [1234] * 2, "end": [2345] * 2, "strand": ["*"] * 2}
     for i in range(2):
         first_entry = get_genomicranges_line(ints, i)
@@ -391,9 +392,9 @@ def test_get_genomicranges_line():
 
 
 def test_by_id_vcf_in_regions():
-    from kipoi.postprocessing.variant_effects.utils.generic import default_vcf_id_gen
-    from kipoi.postprocessing.variant_effects.snv_predict import get_variants_in_regions_sequential_vcf
-    vcf_path = kipoi.postprocessing.variant_effects.ensure_tabixed_vcf("tests/models/rbp/example_files/variants.vcf")
+    from kipoi_veff.utils.generic import default_vcf_id_gen
+    from kipoi_veff.snv_predict import get_variants_in_regions_sequential_vcf
+    vcf_path = kipoi_veff.ensure_tabixed_vcf("tests/models/rbp/example_files/variants.vcf")
     vcf_fh = cyvcf2.VCF(vcf_path, "r")
     ints1 = {"chr": [], "start": [], "end": [], "strand": [], "id": []}
     for rec in vcf_fh:
@@ -427,7 +428,7 @@ def test_by_id_vcf_in_regions():
 
 def test_get_preproc_conv():
     import itertools
-    vcf_path = kipoi.postprocessing.variant_effects.ensure_tabixed_vcf("tests/models/rbp/example_files/variants.vcf")
+    vcf_path = kipoi_veff.ensure_tabixed_vcf("tests/models/rbp/example_files/variants.vcf")
     vcf_fh = cyvcf2.VCF(vcf_path, "r")
     ints1 = {"chr": ["chr22"] * 4, "start": [21541589, 30630701, 21541589, 200],
              "end": [21541953, 36702138, 21541953, 500], "strand": ["*"] * 4}
@@ -435,7 +436,7 @@ def test_get_preproc_conv():
              "strand": ["*"] * 4}
     model_input = {"metadata": {"gr_a": ints1, "gr_c": ints2}}
     seq_to_meta = {"seq_a": "gr_a", "seq_c": "gr_c"}
-    vcf_records, process_lines, process_seq_fields = kipoi.postprocessing.variant_effects.snv_predict.get_variants_in_regions_search_vcf(
+    vcf_records, process_lines, process_seq_fields = kipoi_veff.snv_predict.get_variants_in_regions_search_vcf(
         model_input,
         seq_to_meta,
         vcf_fh)
@@ -447,16 +448,16 @@ def test_get_preproc_conv():
     # Start from the sequence inputs mentioned in the model.yaml
     for seq_key in all_mut_seq_keys:
         ranges_input_obj = model_input['metadata'][seq_to_meta[seq_key]]
-        preproc_conv_df = kipoi.postprocessing.variant_effects.snv_predict.get_variants_df(seq_key, ranges_input_obj,
-                                                                                           vcf_records,
-                                                                                           process_lines, process_ids,
-                                                                                           process_seq_fields)
+        preproc_conv_df = kipoi_veff.snv_predict.get_variants_df(seq_key, ranges_input_obj,
+                                                                 vcf_records,
+                                                                 process_lines, process_ids,
+                                                                 process_seq_fields)
         assert preproc_conv_df.query("do_mutate")["pp_line"].tolist() == mut_seqs[seq_key]
         assert preproc_conv_df.query("do_mutate").isnull().sum().sum() == 0
 
 
 def test_DNAStringSequenceMutator():
-    from kipoi.postprocessing.variant_effects.utils.generic import DNAStringSequenceMutator, VariantLocalisation
+    from kipoi_veff.utils.generic import DNAStringSequenceMutator, VariantLocalisation
     input_set = ["AGTGTCGT", "AGTGTCGT", "AGTGTCGT"]
     ref_mut_set = ["AGNGTCGT", "AGTGTCGT", "AGTGACGT"]
     preproc_conv = {"pp_line": [0, 1, 2], "varpos_rel": [2, 2, 3], "ref": ["T", "A", "A"],
@@ -498,7 +499,7 @@ def onehot(seq):
 
 
 def test_OneHotSequenceMutator():
-    from kipoi.postprocessing.variant_effects.utils.generic import OneHotSequenceMutator, VariantLocalisation
+    from kipoi_veff.utils.generic import OneHotSequenceMutator, VariantLocalisation
     input_set = ["AGTGTCGT", "AGTGTCGT", "AGTGTCGT"]
     ref_mut_set = ["AGNGTCGT", "AGTGTCGT", "AGTGACGT"]
     preproc_conv = {"pp_line": [0, 1, 2], "varpos_rel": [2, np.nan, 3], "ref": ["T", np.nan, "A"],
@@ -550,13 +551,13 @@ def test_var_eff_pred_varseq():
     out_vcf_fpath = model_dir + "example_files/variants_generated.vcf"
     ref_out_vcf_fpath = model_dir + "example_files/variants_ref_out.vcf"
     #
-    vcf_path = kipoi.postprocessing.variant_effects.ensure_tabixed_vcf(vcf_path)
-    model_info = kipoi.postprocessing.variant_effects.ModelInfoExtractor(model, Dataloader)
-    writer = kipoi.postprocessing.variant_effects.VcfWriter(model, vcf_path, out_vcf_fpath, standardise_var_id=True)
+    vcf_path = kipoi_veff.ensure_tabixed_vcf(vcf_path)
+    model_info = kipoi_veff.ModelInfoExtractor(model, Dataloader)
+    writer = kipoi_veff.VcfWriter(model, vcf_path, out_vcf_fpath, standardise_var_id=True)
     vcf_to_region = None
     with pytest.raises(Exception):
         # This has to raise an exception as the sequence length is None.
-        vcf_to_region = kipoi.postprocessing.variant_effects.SnvCenteredRg(model_info)
+        vcf_to_region = kipoi_veff.SnvCenteredRg(model_info)
     res = sp.predict_snvs(model, Dataloader, vcf_path, dataloader_args=dataloader_arguments,
                           evaluation_function=analyse_model_preds, batch_size=32,
                           vcf_to_region=vcf_to_region,
@@ -594,10 +595,10 @@ def test_var_eff_pred():
     ref_out_vcf_fpath = model_dir + "example_files/variants_ref_out.vcf"
     #
     # with cd(model.source_dir):
-    model_info = kipoi.postprocessing.variant_effects.ModelInfoExtractor(model, Dataloader)
-    writer = kipoi.postprocessing.variant_effects.VcfWriter(model, vcf_path, out_vcf_fpath,
-                                                            standardise_var_id=True)
-    vcf_to_region = kipoi.postprocessing.variant_effects.SnvCenteredRg(model_info)
+    model_info = kipoi_veff.ModelInfoExtractor(model, Dataloader)
+    writer = kipoi_veff.VcfWriter(model, vcf_path, out_vcf_fpath,
+                                  standardise_var_id=True)
+    vcf_to_region = kipoi_veff.SnvCenteredRg(model_info)
     res = sp.predict_snvs(model, Dataloader, vcf_path, dataloader_args=dataloader_arguments,
                           evaluation_function=analyse_model_preds, batch_size=32,
                           vcf_to_region=vcf_to_region,
@@ -638,10 +639,10 @@ def test_var_eff_pred2():
     #
     # with cd(model.source_dir):
     pbd = pb.BedTool(restricted_regions_fpath)
-    model_info = kipoi.postprocessing.variant_effects.ModelInfoExtractor(model, Dataloader)
-    vcf_to_region = kipoi.postprocessing.variant_effects.SnvPosRestrictedRg(model_info, pbd)
-    writer = kipoi.postprocessing.variant_effects.utils.io.VcfWriter(model, vcf_path, out_vcf_fpath,
-                                                                     standardise_var_id=True)
+    model_info = kipoi_veff.ModelInfoExtractor(model, Dataloader)
+    vcf_to_region = kipoi_veff.SnvPosRestrictedRg(model_info, pbd)
+    writer = kipoi_veff.utils.io.VcfWriter(model, vcf_path, out_vcf_fpath,
+                                           standardise_var_id=True)
     res = sp.predict_snvs(model, Dataloader, vcf_path, dataloader_args=dataloader_arguments,
                           evaluation_function=analyse_model_preds, batch_size=32,
                           vcf_to_region=vcf_to_region,
@@ -752,8 +753,8 @@ def test__generate_pos_restricted_seqs():
         qbf = pb.BedTool("chr22 %d %d" % tuple(tpl[0]), from_string=True)
         regions = Dummy_internval()
         # sp._generate_pos_restricted_seqs(vcf_fh, sp._default_vcf_id_gen, qbf, regions.append_interval, seq_length)
-        region_generator = kipoi.postprocessing.variant_effects.SnvPosRestrictedRg(model_info_extractor, qbf)
-        _write_regions_from_vcf(vcf_fh, kipoi.postprocessing.variant_effects.utils.generic.default_vcf_id_gen,
+        region_generator = kipoi_veff.SnvPosRestrictedRg(model_info_extractor, qbf)
+        _write_regions_from_vcf(vcf_fh, kipoi_veff.utils.generic.default_vcf_id_gen,
                                 regions.append_interval, region_generator)
         vcf_fh.close()
         regions_df = pd.DataFrame(regions.storage)
@@ -768,7 +769,7 @@ def test_BedOverlappingRg():
         qbf = pb.BedTool("chr22 %d %d" % tuple(tpl), from_string=True)
         regions = Dummy_internval()
         # sp._generate_pos_restricted_seqs(vcf_fh, sp._default_vcf_id_gen, qbf, regions.append_interval, seq_length)
-        region_generator = kipoi.postprocessing.variant_effects.BedOverlappingRg(model_info_extractor)
+        region_generator = kipoi_veff.BedOverlappingRg(model_info_extractor)
         for entry in qbf:
             ret_regions = region_generator(entry)
             regions_df = pd.DataFrame(ret_regions)
@@ -802,8 +803,8 @@ def test__generate_snv_centered_seqs():
         vcf_fh = cyvcf2.VCF(vcf_path, "r")
         regions = Dummy_internval()
         model_info_extractor.seq_length = seq_length
-        region_generator = kipoi.postprocessing.variant_effects.utils.generic.SnvCenteredRg(model_info_extractor)
-        _write_regions_from_vcf(vcf_fh, kipoi.postprocessing.variant_effects.utils.generic.default_vcf_id_gen,
+        region_generator = kipoi_veff.utils.generic.SnvCenteredRg(model_info_extractor)
+        _write_regions_from_vcf(vcf_fh, kipoi_veff.utils.generic.default_vcf_id_gen,
                                 regions.append_interval, region_generator)
         vcf_fh.close()
         regions_df = pd.DataFrame(regions.storage)
@@ -819,7 +820,7 @@ def test__generate_seq_sets():
     vcf_sub_path = "example_files/variants.vcf"
 
     vcf_path = model_dir + vcf_sub_path
-    vcf_path = kipoi.postprocessing.variant_effects.ensure_tabixed_vcf(vcf_path)
+    vcf_path = kipoi_veff.ensure_tabixed_vcf(vcf_path)
     # for any given input type: list, dict and np.array return 4 identical sets, except for mutated bases on one position
     seq_len = 101
     model_info_extractor = DummyModelInfo(seq_len)
@@ -834,8 +835,8 @@ def test__generate_seq_sets():
         regions = Dummy_internval()
         #
         model_info_extractor.seq_length = seq_len
-        region_generator = kipoi.postprocessing.variant_effects.utils.generic.SnvCenteredRg(model_info_extractor)
-        _write_regions_from_vcf(vcf_fh, kipoi.postprocessing.variant_effects.utils.generic.default_vcf_id_gen,
+        region_generator = kipoi_veff.utils.generic.SnvCenteredRg(model_info_extractor)
+        _write_regions_from_vcf(vcf_fh, kipoi_veff.utils.generic.default_vcf_id_gen,
                                 regions.append_interval, region_generator)
         #
         vcf_fh.close()
@@ -853,7 +854,7 @@ def test__generate_seq_sets():
         #
         meta_data_options = [gr_meta, dict_meta]
         #
-        seq_to_mut = {"seq": kipoi.postprocessing.variant_effects.utils.generic.OneHotSequenceMutator()}
+        seq_to_mut = {"seq": kipoi_veff.utils.generic.OneHotSequenceMutator()}
         seq_to_meta = {"seq": "ranges"}
         #
         sample_counter = sp.SampleCounter()
@@ -872,7 +873,7 @@ def test__generate_seq_sets():
                 vcf_fh = cyvcf2.VCF(vcf_path, "r")
                 # relv_seq_keys, dataloader, model_input, vcf_fh, vcf_id_generator_fn, array_trafo=None
                 ssets = sp._generate_seq_sets(dataloader.output_schema, model_input, vcf_fh,
-                                              vcf_id_generator_fn=kipoi.postprocessing.variant_effects.utils.generic.default_vcf_id_gen,
+                                              vcf_id_generator_fn=kipoi_veff.utils.generic.default_vcf_id_gen,
                                               seq_to_mut=seq_to_mut,
                                               seq_to_meta=seq_to_meta, sample_counter=sample_counter,
                                               vcf_search_regions=vcf_search_regions)
@@ -901,8 +902,8 @@ def test__generate_seq_sets():
         pbd = pb.BedTool(model_dir + restricted_regions_fpath)
         vcf_fh = cyvcf2.VCF(vcf_path, "r")
         regions = Dummy_internval()
-        region_generator = kipoi.postprocessing.variant_effects.SnvPosRestrictedRg(model_info_extractor, pbd)
-        _write_regions_from_vcf(vcf_fh, kipoi.postprocessing.variant_effects.utils.generic.default_vcf_id_gen,
+        region_generator = kipoi_veff.SnvPosRestrictedRg(model_info_extractor, pbd)
+        _write_regions_from_vcf(vcf_fh, kipoi_veff.utils.generic.default_vcf_id_gen,
                                 regions.append_interval, region_generator)
         # sp._generate_pos_restricted_seqs(vcf_fh, sp._default_vcf_id_gen, pbd, regions.append_interval, seq_len)
         vcf_fh.close()
@@ -938,7 +939,7 @@ def test__generate_seq_sets():
                 # relv_seq_keys, dataloader, model_input, vcf_fh, vcf_id_generator_fn, array_trafo=None
                 sample_counter = sp.SampleCounter()
                 ssets = sp._generate_seq_sets(dataloader.output_schema, model_input, vcf_fh,
-                                              vcf_id_generator_fn=kipoi.postprocessing.variant_effects.utils.generic.default_vcf_id_gen,
+                                              vcf_id_generator_fn=kipoi_veff.utils.generic.default_vcf_id_gen,
                                               seq_to_mut=seq_to_mut,
                                               seq_to_meta=seq_to_meta,
                                               sample_counter=sample_counter,
@@ -992,18 +993,18 @@ def test_subsetting():
 
 def test_ensure_tabixed_vcf():
     vcf_in_fpath = "tests/models/rbp/example_files/variants.vcf"
-    vcf_path = kipoi.postprocessing.variant_effects.ensure_tabixed_vcf(vcf_in_fpath)
+    vcf_path = kipoi_veff.ensure_tabixed_vcf(vcf_in_fpath)
     assert os.path.exists(vcf_path)
     assert vcf_path.endswith(".gz")
     with pytest.raises(Exception):
         # since the file exists, we should now complain
-        vcf_path = kipoi.postprocessing.variant_effects.ensure_tabixed_vcf(vcf_in_fpath, force_tabix=False)
+        vcf_path = kipoi_veff.ensure_tabixed_vcf(vcf_in_fpath, force_tabix=False)
     vcf_in_fpath_gz = vcf_in_fpath + ".gz"
-    assert vcf_in_fpath_gz == kipoi.postprocessing.variant_effects.ensure_tabixed_vcf(vcf_in_fpath_gz)
+    assert vcf_in_fpath_gz == kipoi_veff.ensure_tabixed_vcf(vcf_in_fpath_gz)
 
 
 def test__overlap_vcf_region():
-    vcf_path = kipoi.postprocessing.variant_effects.ensure_tabixed_vcf("tests/models/rbp/example_files/variants.vcf")
+    vcf_path = kipoi_veff.ensure_tabixed_vcf("tests/models/rbp/example_files/variants.vcf")
     vcf_obj = cyvcf2.VCF(vcf_path)
     all_records = [rec for rec in vcf_obj]
     vcf_obj.close()
@@ -1086,7 +1087,7 @@ def test_modify_single_string_base():
 
 
 def test_all_scoring_options_available():
-    from kipoi.postprocessing.variant_effects.components import VarEffectFuncType
+    from kipoi_veff.components import VarEffectFuncType
 
     assert {x.value for x in list(VarEffectFuncType)} == \
         set(list(scoring_options.keys()) + ["custom"])
@@ -1107,8 +1108,8 @@ def test_homogenise_seqname():
 def test_get_vcf_to_region():
     if sys.version_info[0] == 2:
         pytest.skip("rbp example not supported on python 2 ")
-    from kipoi.postprocessing.variant_effects import ModelInfoExtractor, SnvCenteredRg, SnvPosRestrictedRg
-    from kipoi.postprocessing.variant_effects.snv_predict import _get_vcf_to_region
+    from kipoi_veff import ModelInfoExtractor, SnvCenteredRg, SnvPosRestrictedRg
+    from kipoi_veff.snv_predict import _get_vcf_to_region
     example_dir = "tests/models/rbp"
     model = kipoi.get_model(example_dir, source="dir")
     restr_bed = example_dir + "/example_files/restricted_regions.bed"
