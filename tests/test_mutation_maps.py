@@ -211,7 +211,7 @@ def test__generate_seq_sets_mutmap_iter():
                                                                          sample_counter=sample_counter,
                                                                          ref_sequences=ref_seqs,
                                                                          vcf_fh=vcf_fh,
-                                                                         vcf_id_generator_fn=kipoi.postprocessing.variant_effects.utils.generic.default_vcf_id_gen,
+                                                                         vcf_id_generator_fn=kipoi_veff.utils.generic.default_vcf_id_gen,
                                                                          vcf_search_regions=vcf_search_regions,
                                                                          generate_rc=True,
                                                                          batch_size=batch_size)
@@ -326,14 +326,14 @@ def test_MutationMapDataMerger():
     model_dir = "tests/models/rbp/"
     vcf_sub_path = "example_files/variants.vcf"
     vcf_path = model_dir + vcf_sub_path
-    vcf_path = kipoi.postprocessing.variant_effects.ensure_tabixed_vcf(vcf_path)
+    vcf_path = kipoi_veff.ensure_tabixed_vcf(vcf_path)
     seq_len = 10
     model_info_extractor = DummyModelInfo(seq_len)
     model_info_extractor.seq_length = seq_len
-    region_generator = kipoi.postprocessing.variant_effects.utils.generic.SnvCenteredRg(model_info_extractor)
+    region_generator = kipoi_veff.utils.generic.SnvCenteredRg(model_info_extractor)
     vcf_fh = cyvcf2.VCF(vcf_path)
     regions = Dummy_internval()
-    _write_regions_from_vcf(vcf_fh, kipoi.postprocessing.variant_effects.utils.generic.default_vcf_id_gen,
+    _write_regions_from_vcf(vcf_fh, kipoi_veff.utils.generic.default_vcf_id_gen,
                             regions.append_interval, region_generator)
     #
     vcf_fh.close()
@@ -342,7 +342,7 @@ def test_MutationMapDataMerger():
     query_process_lines = list(range(num_seqs))
     vcf_fh = cyvcf2.VCF(vcf_path)
     query_vcf_records = [rec for rec in vcf_fh if
-                         kipoi.postprocessing.variant_effects.utils.generic.default_vcf_id_gen(rec)
+                         kipoi_veff.utils.generic.default_vcf_id_gen(rec)
                          in annotated_regions["id"].tolist()]
     #
     gr_meta = {
@@ -424,15 +424,15 @@ def test_mutation_map():
     # Run the actual predictions
     vcf_path = model_dir + "example_files/first_variant.vcf"
     #
-    model_info = kipoi.postprocessing.variant_effects.ModelInfoExtractor(model, Dataloader)
-    vcf_to_region = kipoi.postprocessing.variant_effects.SnvCenteredRg(model_info)
+    model_info = kipoi_veff.ModelInfoExtractor(model, Dataloader)
+    vcf_to_region = kipoi_veff.SnvCenteredRg(model_info)
     mdmm = mm._generate_mutation_map(model, Dataloader, vcf_path, dataloader_args=dataloader_arguments,
                                      evaluation_function=analyse_model_preds, batch_size=32,
                                      vcf_to_region=vcf_to_region,
                                      evaluation_function_kwargs={'diff_types': {'diff': Diff("mean")}})
     with cd(model.source_dir):
         mdmm.save_to_file("example_files/first_variant_mm_totest.hdf5")
-        from kipoi.postprocessing.variant_effects.utils.generic import read_hdf5
+        from kipoi_veff.utils.generic import read_hdf5
         reference = read_hdf5("example_files/first_variant_mm.hdf5")
         obs = read_hdf5("example_files/first_variant_mm.hdf5")
         compare_rec(reference[0], obs[0])

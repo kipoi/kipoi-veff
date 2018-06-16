@@ -280,11 +280,6 @@ def test__get_dl_bed_fields():
     assert (
         kipoi_veff.utils.generic._get_dl_bed_fields(
             kipoi.get_dataloader_descr(model_dir, source="dir")) == ['intervals_file'])
-    # This is not valid anymore:
-    # model_dir = "tests/models/extended_coda/"
-    # with pytest.raises(Exception):
-    #    kipoi.postprocessing.utils.generic._get_dl_bed_fields(kipoi.get_dataloader_descr(model_dir, source="dir"))
-
 
 def test_dna_reshaper():
     for n_seqs in [1, 3, 500]:

@@ -3,8 +3,7 @@ from related import from_yaml
 import pytest
 from kipoi_veff.scores import get_avail_scoring_fns, get_scoring_fns, \
     builtin_default_kwargs
-from kipoi.postprocessing import variant_effects as ve
-
+import kipoi_veff as ve
 
 class dummy_container(object):
     pass

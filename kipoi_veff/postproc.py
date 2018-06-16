@@ -11,7 +11,7 @@ import sys
 import kipoi
 import kipoi_veff
 from kipoi.cli.parser_utils import add_model, add_dataloader, file_exists, dir_exists
-from kipoi_veff.components import VarEffectFuncType
+from kipoi_veff.specs import VarEffectFuncType
 from kipoi_veff.scores import get_scoring_fns
 from kipoi import writers
 from kipoi.utils import cd
@@ -391,245 +391,12 @@ def cli_grad(command, raw_args):
     logger.info('Done! Gradients stored in {0}'.format(",".join(args.output)))
 
 
-def cli_grad_to_file(command, raw_args):
-    """ CLI to save seq inputs of grad*input to a bigwig file
-    """
-    assert command == "gr_inp_to_file"
-    parser = argparse.ArgumentParser('kipoi postproc {}'.format(command),
-                                     description='Save grad*input in a file.')
-    add_model(parser)
-    add_dataloader(parser, with_args=True)
-    # TODO - rename path to fpath
-    parser.add_argument('-f', '--input_file', required=False,
-                        help="Input HDF5 file produced from `grad`")
-    parser.add_argument('-o', '--output', required=False,
-                        help="Output bigwig for bedgraph file")
-    parser.add_argument('--sample', required=False, type=int, default=None,
-                        help="Input line for which the BigWig file should be generated. If not defined all"
-                             "samples will be written.")
-    parser.add_argument('--model_input', required=False, default=None,
-                        help="Model input name to be used for plotting. As defined in model.yaml. Can be omitted if"
-                             "model only has one input.")
-    args = parser.parse_args(raw_args)
-
-    # Check that all the folders exist
-    dir_exists(os.path.dirname(args.output), logger)
-    # --------------------------------------------
-    # install args
-    import matplotlib.pyplot
-    matplotlib.pyplot.switch_backend('agg')
-    import matplotlib.pylab as plt
-    from kipoi_veff.mutation_map import MutationMapPlotter
-    from kipoi.postprocessing.gradient_vis.vis import GradPlotter
-    from kipoi.writers import BedGraphWriter
-
-    logger.info('Loading gradient results file and model info...')
-
-    gp = GradPlotter.from_hdf5(args.input_file, model=args.model, source=args.source)
-
-    if args.sample is not None:
-        samples = [args.sample]
-    else:
-        samples = list(range(gp.get_num_samples(args.model_input)))
-
-    if args.output.endswith(".bed") or args.output.endswith(".bedgraph"):
-        of_obj = BedGraphWriter(args.output)
-    else:
-        raise Exception("Output file format not supported!")
-
-    logger.info('Writing...')
-
-    for sample in samples:
-        gp.write(sample, model_input=args.model_input, writer_obj=of_obj)
-
-    logger.info('Saving...')
-
-    of_obj.close()
-
-    logger.info('Successfully wrote grad*input to file.')
-
-
-def cli_create_mutation_map(command, raw_args):
-    """CLI interface to calculate mutation map data 
-    """
-    assert command == "create_mutation_map"
-    parser = argparse.ArgumentParser('kipoi postproc {}'.format(command),
-                                     description='Predict effect of SNVs using ISM.')
-    add_model(parser)
-    add_dataloader(parser, with_args=True)
-    parser.add_argument('-r', '--regions_file',
-                        help='Region definition as VCF or bed file. Not a required input.')
-    # TODO - rename path to fpath
-    parser.add_argument('--batch_size', type=int, default=32,
-                        help='Batch size to use in prediction')
-    parser.add_argument("-n", "--num_workers", type=int, default=0,
-                        help="Number of parallel workers for loading the dataset")
-    parser.add_argument("-i", "--install_req", action='store_true',
-                        help="Install required packages from requirements.txt")
-    parser.add_argument('-o', '--output', required=True,
-                        help="Output HDF5 file. To be used as input for plotting.")
-    parser.add_argument('-s', "--scores", default="diff", nargs="+",
-                        help="Scoring method to be used. Only scoring methods selected in the model yaml file are"
-                             "available except for `diff` which is always available. Select scoring function by the"
-                             "`name` tag defined in the model yaml file.")
-    parser.add_argument('-k', "--score_kwargs", default="", nargs="+",
-                        help="JSON definition of the kwargs for the scoring functions selected in --scores. The "
-                             "definiton can either be in JSON in the command line or the path of a .json file. The "
-                             "individual JSONs are expected to be supplied in the same order as the labels defined in "
-                             "--scores. If the defaults or no arguments should be used define '{}' for that respective "
-                             "scoring method.")
-    parser.add_argument('-l', "--seq_length", type=int, default=None,
-                        help="Optional parameter: Model input sequence length - necessary if the model does not have a "
-                             "pre-defined input sequence length.")
-
-    args = parser.parse_args(raw_args)
-
-    # extract args for kipoi.variant_effects.predict_snvs
-
-    dataloader_arguments = parse_json_file_str(args.dataloader_args)
-
-    if args.output is None:
-        raise Exception("Output file `--output` has to be set!")
-
-    # --------------------------------------------
-    # install args
-    if args.install_req:
-        kipoi.pipeline.install_model_requirements(args.model, args.source, and_dataloaders=True)
-    # load model & dataloader
-    model = kipoi.get_model(args.model, args.source)
-
-    regions_file = os.path.realpath(args.regions_file)
-    output = os.path.realpath(args.output)
-    with cd(model.source_dir):
-        if not os.path.exists(regions_file):
-            raise Exception("Regions inputs file does not exist: %s" % args.regions_file)
-
-        # Check that all the folders exist
-        file_exists(regions_file, logger)
-        dir_exists(os.path.dirname(output), logger)
-
-        if args.dataloader is not None:
-            Dl = kipoi.get_dataloader_factory(args.dataloader, args.dataloader_source)
-        else:
-            Dl = model.default_dataloader
-
-    if not isinstance(args.scores, list):
-        args.scores = [args.scores]
-
-    dts = get_scoring_fns(model, args.scores, args.score_kwargs)
-
-    # Load effect prediction related model info
-    model_info = kipoi_veff.ModelInfoExtractor(model, Dl)
-    manual_seq_len = args.seq_length
-
-    # Select the appropriate region generator and vcf or bed file input
-    args.file_format = regions_file.split(".")[-1]
-    bed_region_file = None
-    vcf_region_file = None
-    bed_to_region = None
-    vcf_to_region = None
-    if args.file_format == "vcf" or regions_file.endswith("vcf.gz"):
-        vcf_region_file = regions_file
-        if model_info.requires_region_definition:
-            # Select the SNV-centered region generator
-            vcf_to_region = kipoi_veff.SnvCenteredRg(model_info, seq_length=manual_seq_len)
-            logger.info('Using variant-centered sequence generation.')
-    elif args.file_format == "bed":
-        if model_info.requires_region_definition:
-            # Select the SNV-centered region generator
-            bed_to_region = kipoi_veff.BedOverlappingRg(model_info, seq_length=manual_seq_len)
-            logger.info('Using bed-file based sequence generation.')
-        bed_region_file = regions_file
-    else:
-        raise Exception("")
-
-    if model_info.use_seq_only_rc:
-        logger.info('Model SUPPORTS simple reverse complementation of input DNA sequences.')
-    else:
-        logger.info('Model DOES NOT support simple reverse complementation of input DNA sequences.')
-
-    from kipoi_veff.mutation_map import _generate_mutation_map
-    mdmm = _generate_mutation_map(model,
-                                  Dl,
-                                  vcf_fpath=vcf_region_file,
-                                  bed_fpath=bed_region_file,
-                                  batch_size=args.batch_size,
-                                  num_workers=args.num_workers,
-                                  dataloader_args=dataloader_arguments,
-                                  vcf_to_region=vcf_to_region,
-                                  bed_to_region=bed_to_region,
-                                  evaluation_function_kwargs={'diff_types': dts},
-                                  )
-    mdmm.save_to_file(output)
-
-    logger.info('Successfully generated mutation map data')
-
-
-def cli_plot_mutation_map(command, raw_args):
-    """CLI interface to plot mutation map
-    """
-    assert command == "plot_mutation_map"
-    parser = argparse.ArgumentParser('kipoi postproc {}'.format(command),
-                                     description='Plot mutation map in a file.')
-    # TODO - rename path to fpath
-    parser.add_argument('-f', '--input_file', required=False,
-                        help="Input HDF5 file produced from `create_mutation_map`")
-    parser.add_argument('-o', '--output', required=False,
-                        help="Output image file")
-    parser.add_argument('--input_entry', required=True, type=int,
-                        help="Input line for which the plot should be generated")
-    parser.add_argument('--model_seq_input', required=True,
-                        help="Model input name to be used for plotting. As defined in model.yaml.")
-    parser.add_argument('--scoring_key', required=True,
-                        help="Variant score label to be used for plotting. As defined when running "
-                             "`create_mutation_map`.")
-    parser.add_argument('--model_output', required=True,
-                        help="Model output to be used for plotting. As defined in model.yaml.")
-    parser.add_argument('--limit_region_genomic', required=False, nargs=2, type=int, default=None,
-                        help="Limit to genomic region. Given as tuple without chromosome, "
-                             "eg: `--limit_region_genomic 13245 12347`")
-    parser.add_argument('--rc_plot', required=False, action="store_true",
-                        help="Make reverse-complement plot.")
-    args = parser.parse_args(raw_args)
-
-    # Check that all the folders exist
-    dir_exists(os.path.dirname(args.output), logger)
-    # --------------------------------------------
-    # install args
-    import matplotlib.pyplot
-    matplotlib.pyplot.switch_backend('agg')
-    import matplotlib.pylab as plt
-    from kipoi_veff.mutation_map import MutationMapPlotter
-
-    logger.info('Loading mutation map file...')
-
-    mutmap = MutationMapPlotter(fname=args.input_file)
-
-    fig = plt.figure(figsize=(20, 2))
-    ax = plt.subplot(1, 1, 1)
-
-    logger.info('Plotting...')
-
-    if args.limit_region_genomic is not None:
-        args.limit_region_genomic = tuple(args.limit_region_genomic)
-
-    mutmap.plot_mutmap(args.input_entry, args.model_seq_input, args.scoring_key, args.model_output, ax=ax,
-                       limit_region_genomic=args.limit_region_genomic, rc_plot=args.rc_plot)
-    fig.savefig(args.output)
-
-    logger.info('Successfully plotted mutation map')
-
-
 # --------------------------------------------
 # CLI commands
 
 
 command_functions = {
     'score_variants': cli_score_variants,
-    'grad': cli_grad,
-    'create_mutation_map': cli_create_mutation_map,
-    'plot_mutation_map': cli_plot_mutation_map,
-    'gr_inp_to_file': cli_grad_to_file
 }
 commands_str = ', '.join(command_functions.keys())
 
@@ -639,10 +406,6 @@ parser = argparse.ArgumentParser(
 
     # Available sub-commands:
     score_variants        Score variants with a kipoi model
-    grad                  Save gradients and inputs to a hdf5 file
-    gr_inp_to_file        Save grad*input in a file.
-    create_mutation_map   Calculate variant effect scores for mutation map plotting
-    plot_mutation_map     Plot mutation map from data generated in `create_mutation_map`
     ''')
 parser.add_argument('command', help='Subcommand to run; possible commands: {}'.format(commands_str))
 
