@@ -1,7 +1,9 @@
 from related import from_yaml
 
 from kipoi.components import PostProcModelStruct, PostProcDataLoaderStruct
-from kipoi_veff.components import VarEffectFuncType
+# TODO - upgrade
+from kipoi.postprocessing.variant_effects.components import VarEffectFuncType
+# from kipoi_veff.specs import VarEffectFuncType
 
 yaml_in_no_args = """
 variant_effects:

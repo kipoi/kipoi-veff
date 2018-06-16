@@ -85,8 +85,9 @@ def soft_to_float(x):
 
 
 class KipoiVCFParser(object):
+
     def __init__(self, vcf_file):
-        """Iteratively a vcf file intoa dictionary
+        """Iteratively a vcf file into a dictionary
 
         Args:
           vcf_file: .vcf file path (can be also .vcf.gz, .bcf, .bcf.gz)

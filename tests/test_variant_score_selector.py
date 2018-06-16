@@ -1,9 +1,13 @@
 from kipoi.components import PostProcModelStruct
 from related import from_yaml
 import pytest
-from kipoi_veff.scores import get_avail_scoring_fns, get_scoring_fns, \
-    builtin_default_kwargs
-import kipoi_veff as ve
+from kipoi_veff.scores import builtin_default_kwargs
+
+# TODO - remove back
+from kipoi.postprocessing.variant_effects.scores import get_avail_scoring_fns, get_scoring_fns
+from kipoi.postprocessing.variant_effects import Diff, Ref, LogitRef, Alt, LogitAlt, Logit, LogitAlt, DeepSEA_effect
+# from kipoi_veff.scores import get_avail_scoring_fns, get_scoring_fns
+# from kipoi_veff import Diff, Ref, LogitRef, Alt, LogitAlt, Logit, LogitAlt, DeepSEA_effect
 
 class dummy_container(object):
     pass
@@ -67,11 +71,11 @@ optional_args = """      args:
 
 
 def test_custom_fns():
-    template_avail_scoring_fns = [ve.Logit, ve.DeepSEA_effect, ve.LogitAlt]
+    template_avail_scoring_fns = [Logit, DeepSEA_effect, LogitAlt]
     template_avail_scoring_fn_labels = ["logit", "deepsea_effect", "mydiff"]
     #
-    exp_avail_scoring_fns = [template_avail_scoring_fns + [ve.Diff] + [ve.Ref, ve.Alt, ve.LogitRef],
-                             [ve.Diff] + template_avail_scoring_fns + [ve.Ref, ve.Alt, ve.LogitRef]]
+    exp_avail_scoring_fns = [template_avail_scoring_fns + [Diff] + [Ref, Alt, LogitRef],
+                             [Diff] + template_avail_scoring_fns + [Ref, Alt, LogitRef]]
     exp_avail_scoring_fn_labels = [template_avail_scoring_fn_labels + ["diff"] + ["ref", "alt", "logit_ref"],
                                    ["diff"] + template_avail_scoring_fn_labels + ["ref", "alt", "logit_ref"]]
     #
@@ -136,7 +140,7 @@ def test_default_diff():
         get_avail_scoring_fns(model)
     #
     output = [avail_scoring_fn_names, avail_scoring_fns, avail_scoring_fn_def_args]
-    expected = [["diff", "ref", "alt"], [ve.Diff, ve.Ref, ve.Alt], [builtin_default_kwargs] * 3]
+    expected = [["diff", "ref", "alt"], [Diff, Ref, Alt], [builtin_default_kwargs] * 3]
     assert_groupwise_identity(output, expected)
     assert default_scoring_fns == ["diff"]
 
@@ -231,7 +235,7 @@ def test__get_scoring_fns():
     pps = PostProcModelStruct.from_config(from_yaml(postproc_cli_yaml))
     model = dummy_container()
     model.postprocessing = pps
-    scorers = [{"logit": ve.Logit, "deepsea_effect": ve.DeepSEA_effect}, {"logit": ve.Logit}, {}]
+    scorers = [{"logit": Logit, "deepsea_effect": DeepSEA_effect}, {"logit": Logit}, {}]
     kwargs = {"rc_merging": 'max'}
     for sel_scoring_labels, scorer in zip([[], ["logit"], ["inexistent", "logit"], ["all"]], scorers):
         jk_list = [kwargs] * len(sel_scoring_labels)

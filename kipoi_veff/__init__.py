@@ -5,10 +5,17 @@ __email__ = 'avsec@in.tum.de'
 __version__ = '0.1.0'
 
 
-from .scores import Ref, Alt, Diff, LogitRef, LogitAlt, Logit, DeepSEA_effect
-from .parsers import KipoiVCFParser
+from . import scores
+from . import parsers
+from . import utils
+from . import snv_predict
+from . import specs
+# from .scores import Ref, Alt, Diff, LogitRef, LogitAlt, Logit, DeepSEA_effect
+# from .parsers import KipoiVCFParser
+
 from .snv_predict import predict_snvs, analyse_model_preds, score_variants
 from .utils import ModelInfoExtractor, SnvPosRestrictedRg, SnvCenteredRg, ensure_tabixed_vcf, VcfWriter, \
     BedOverlappingRg
+
+# TODO - exclude
 from .mutation_map import MutationMap
-# from .mutation_map import _generate_mutation_map, MutationMapDrawer

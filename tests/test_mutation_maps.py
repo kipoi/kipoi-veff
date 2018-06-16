@@ -7,7 +7,8 @@ from kipoi.readers import HDF5Reader
 from kipoi.pipeline import install_model_requirements
 from kipoi.utils import cd
 import kipoi
-from kipoi_veff import Logit, Diff, DeepSEA_effect, analyse_model_preds
+from kipoi_veff.scores import Logit, Diff, DeepSEA_effect
+from kipoi_veff import analyse_model_preds
 import cyvcf2
 from kipoi.metadata import GenomicRanges
 import pandas as pd

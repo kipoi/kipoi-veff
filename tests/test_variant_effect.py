@@ -19,8 +19,8 @@ import kipoi_veff.utils.generic
 import kipoi_veff.utils.io
 from kipoi.metadata import GenomicRanges
 from kipoi.pipeline import install_model_requirements
-from kipoi_veff import Logit, Diff, DeepSEA_effect, analyse_model_preds
-from kipoi_veff.scores import RCScore, scoring_options
+from kipoi_veff import analyse_model_preds
+from kipoi_veff.scores import Logit, LogitRef, LogitAlt, Diff, DeepSEA_effect, RCScore, scoring_options
 from kipoi_veff.utils.mutators import rc_str, _modify_single_string_base
 from kipoi.utils import cd
 from kipoi_veff.utils import is_indel_wrapper
@@ -694,8 +694,8 @@ def test_enhanced_analysis_effects():
     assert np.all((Diff("max")(**preds_arb) == counts - probs_r))
     #
     preds_prob_r = {"ref": probs_r, "ref_rc": probs_r, "alt": probs_a, "alt_rc": probs_a}
-    assert np.all((ve.LogitAlt("max")(**preds_prob_r) == logit(probs_a)))
-    assert np.all((ve.LogitRef("max")(**preds_prob_r) == logit(probs_r)))
+    assert np.all((LogitAlt("max")(**preds_prob_r) == logit(probs_a)))
+    assert np.all((LogitRef("max")(**preds_prob_r) == logit(probs_r)))
 
 
 def test_output_reshaper():
@@ -1082,7 +1082,7 @@ def test_modify_single_string_base():
 
 
 def test_all_scoring_options_available():
-    from kipoi_veff.components import VarEffectFuncType
+    from kipoi_veff.specs import VarEffectFuncType
 
     assert {x.value for x in list(VarEffectFuncType)} == \
         set(list(scoring_options.keys()) + ["custom"])
@@ -1099,6 +1099,7 @@ def test_homogenise_seqname():
     homogenise_seqname("22", possible_seqnames_bad)
     with pytest.raises(Exception):
         homogenise_seqname("21", possible_seqnames_bad)
+
 
 def test_get_vcf_to_region():
     if sys.version_info[0] == 2:
