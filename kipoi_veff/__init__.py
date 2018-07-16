@@ -19,3 +19,9 @@ from .utils import ModelInfoExtractor, SnvPosRestrictedRg, SnvCenteredRg, ensure
 
 # TODO - exclude
 from .mutation_map import MutationMap
+
+# Required by kipoi
+from .cli import cli_main
+# kipoi-interpret doesn' need any global variables
+from .specs import VarEffectModelArgs as ModelParser
+from .specs import VarEffectDataLoaderArgs as DataloaderParser
