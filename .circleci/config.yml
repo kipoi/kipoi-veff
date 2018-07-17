@@ -8,7 +8,9 @@ variables:
   install_git_lfs: &install_git_lfs
     run:
       name: Install git-lfs
-      command: conda install --yes -c conda-forge git-lfs
+      command: |
+        conda install --yes -c conda-forge git-lfs
+	cp .circleci/gitconfig ~/.gitconfig
   install_pip_deps: &install_pip_deps
     run:
       name: Install pip dependencies
@@ -64,6 +66,7 @@ jobs:
     steps:
       - checkout
       - *update_conda
+      - *install_git_lfs
       - *install_pip_deps
       - *install_kipoi
       - *install_kipoi_veff
@@ -80,6 +83,7 @@ jobs:
     steps:
       - checkout
       - *update_conda
+      - *install_git_lfs
       - *install_pip_deps
       - *install_kipoi
       - *install_kipoi_veff
