@@ -187,13 +187,13 @@ scoring_names = {
 
 
 def get_avail_scoring_fns(model):
-    if model.postprocessing.variant_effects is None:
+    if model.postprocessing.get('variant_effects', None) is None:
         raise Exception("Model deosn't support variant effect prediction according model yaml file.")
     avail_scoring_fns = []  # contains callables
     avail_scoring_fn_def_args = []  # default kwargs for every callable
     avail_scoring_fn_names = []  # contains the labels
     default_scoring_fns = []  # contains the labels of the defaults
-    for sf in model.postprocessing.variant_effects.scoring_functions:
+    for sf in model.postprocessing['variant_effects'].scoring_functions:
         if sf.type is not VarEffectFuncType.custom:
             sn = scoring_names[sf.type]
             sf_obj = scoring_options[sn]

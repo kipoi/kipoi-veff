@@ -37,7 +37,7 @@ def test_generate_mutation_maps_example(example, tmpdir):
     import json
     dataloader_kwargs_str = json.dumps(dataloader_kwargs)
 
-    args = ["python", "kipoi", "veff",
+    args = ["python", os.path.abspath("./kipoi_veff/cli.py"),
             "create_mutation_map",
             # "./",  # directory
             example_dir,
@@ -50,14 +50,13 @@ def test_generate_mutation_maps_example(example, tmpdir):
     if INSTALL_FLAG:
         args.append(INSTALL_FLAG)
 
-    returncode = subprocess.call(args=args,
-                                 cwd=os.path.realpath(example_dir) + "/../../")
+    returncode = subprocess.call(args=args, cwd=".")
     assert returncode == 0
 
     assert os.path.exists(mm_tmpfile)
 
     # make the plot
-    args = ["python", "kipoi_veff",
+    args = ["python", os.path.abspath("./kipoi_veff/cli.py"),
             "plot_mutation_map",
             "--input_file=" + mm_tmpfile,
             "--input_entry=0",

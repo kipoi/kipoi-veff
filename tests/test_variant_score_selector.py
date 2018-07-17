@@ -107,7 +107,7 @@ def test_custom_fns():
                         assert default_scoring_fns == ["deepsea_effect"]
     model = dummy_container()
     model.postprocessing = dummy_container()
-    model.postprocessing.variant_effects = None
+    model.postprocessing['variant_effects'] = None
     with pytest.raises(Exception):
         get_avail_scoring_fns(model)
 
@@ -121,9 +121,8 @@ def test_ret():
 
 
 postproc_yaml_nofndef = """
-variant_effects:
-  seq_input:
-    - seq
+seq_input:
+  - seq
 """
 
 
@@ -143,14 +142,13 @@ def test_default_diff():
 
 # test duplication of names
 dupl_name_yaml = """
-variant_effects:
-  seq_input:
-    - seq
-  scoring_functions:
-    - type: logit
-      name: logit
-    - type: logit
-      name: logit
+seq_input:
+  - seq
+scoring_functions:
+  - type: logit
+    name: logit
+  - type: logit
+    name: logit
 """
 
 
@@ -164,16 +162,15 @@ def test_dupl_name():
 
 # test modification of name with custom_
 rename_custom_yaml = """
-variant_effects:
-  seq_input:
-    - seq
-  scoring_functions:
-    - name: logit
-      type: custom
-      defined_as: tests/data/dummy_diff.py::LogitAlt
-      args:
-        rc_merging:
-          default: "max"
+seq_input:
+  - seq
+scoring_functions:
+  - name: logit
+    type: custom
+    defined_as: tests/data/dummy_diff.py::LogitAlt
+    args:
+      rc_merging:
+        default: "max"
 """
 
 
@@ -190,18 +187,17 @@ def test_rename_custom():
 
 
 postproc_autodefault_yaml = """
-variant_effects:
-  seq_input:
-    - seq
-  scoring_functions:
-    - type: logit
-    - type: deepsea_effect
-    - name: mydiff
-      type: custom
-      defined_as: tests/data/dummy_diff.py::LogitAlt
-      args:
-        rc_merging:
-          default: "max"
+seq_input:
+  - seq
+scoring_functions:
+  - type: logit
+  - type: deepsea_effect
+  - name: mydiff
+    type: custom
+    defined_as: tests/data/dummy_diff.py::LogitAlt
+    args:
+      rc_merging:
+        default: "max"
 """
 
 
@@ -218,12 +214,11 @@ def test_auto_default():
 
 
 postproc_cli_yaml = """
-variant_effects:
-  seq_input:
-    - seq
-  scoring_functions:
-    - type: logit
-    - type: deepsea_effect
+seq_input:
+  - seq
+scoring_functions:
+  - type: logit
+  - type: deepsea_effect
 """
 
 

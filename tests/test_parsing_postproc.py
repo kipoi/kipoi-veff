@@ -19,9 +19,9 @@ seq_input:
 
 def test_minimal_info():
     pps = VarEffectModelArgs.from_config(from_yaml(yaml_in_simple))
-    assert pps.variant_effects is not None
-    assert pps.variant_effects.seq_input == ["seq"]  # should always be there and is always a list of strings
-    assert not pps.variant_effects.use_rc
+    assert pps is not None
+    assert pps.seq_input == ["seq"]  # should always be there and is always a list of strings
+    assert not pps.use_rc
 
 
 yaml_in_simple_rc = """
@@ -33,9 +33,9 @@ use_rc: True
 
 def test_use_rc():
     pps = VarEffectModelArgs.from_config(from_yaml(yaml_in_simple_rc))
-    assert pps.variant_effects is not None
-    assert pps.variant_effects.seq_input == ["seq"]  # should always be there and is always a list of strings
-    assert pps.variant_effects.use_rc
+    assert pps is not None
+    assert pps.seq_input == ["seq"]  # should always be there and is always a list of strings
+    assert pps.use_rc
 
 
 yaml_in_bed = """
@@ -46,8 +46,8 @@ bed_input:
 
 def test_dataloader_bed_input():
     pps = VarEffectDataLoaderArgs.from_config(from_yaml(yaml_in_bed))
-    assert pps.variant_effects is not None
-    assert pps.variant_effects.bed_input == ["intervals_file"]  # pps.args may be None
+    assert pps is not None
+    assert pps.bed_input == ["intervals_file"]  # pps.args may be None
 
 
 yaml_in = """
@@ -74,7 +74,7 @@ scoring_functions:
 
 def test_complex_example():
     pps = VarEffectModelArgs.from_config(from_yaml(yaml_in))
-    ppsv = pps.variant_effects
+    ppsv = pps
     assert ppsv.seq_input == ["seq"]  # should always be there and is always a list of strings
     scoring_fns = [{"name": "diff", "type": VarEffectFuncType.diff, "default": False},
                    {"type": VarEffectFuncType.logit, "default": False},
