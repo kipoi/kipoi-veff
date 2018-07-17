@@ -20,7 +20,7 @@ variables:
         git clone git@github.com:kipoi/kipoi.git kipoi_pkg
         cd kipoi_pkg
         git checkout plugin  # test already the future version of Kipoi
-        pip install '.[develop]'
+        pip install '.'
         cd ..
   install_kipoi_veff: &install_kipoi_veff
     run:
