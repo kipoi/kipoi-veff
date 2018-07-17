@@ -110,6 +110,15 @@ def cli_score_variants(command, raw_args):
     parser.add_argument('--std_var_id', action="store_true", help="If set then variant IDs in the annotated"
                                                                   " VCF will be replaced with a standardised, unique ID.")
 
+    parser.add_argument("--model_outputs", type=str, default=None, nargs="+",
+                        help="Optional parameter: Only return predictions for the selected model outputs. Naming"
+                             "according to the definition in model.yaml > schema > targets > column_labels")
+
+    parser.add_argument("--model_outputs_i", type=int, default=None, nargs="+",
+                        help="Optional parameter: Only return predictions for the selected model outputs. Give integer"
+                             "indices of the selected model output(s).")
+
+
     args = parser.parse_args(raw_args)
     # Make sure all the multi-model arguments like source, dataloader etc. fit together
     _prepare_multi_model_args(args)
@@ -192,6 +201,13 @@ def cli_score_variants(command, raw_args):
         if output_vcf_model is not None:
             logger.info('Annotated VCF will be written to %s.' % str(output_vcf_model))
 
+        model_outputs = None
+        if args.model_outputs is not None:
+            model_outputs = args.model_outputs
+
+        elif args.model_outputs_i is not None:
+            model_outputs = args.model_outputs_i
+
         res[model_name_safe] = kipoi_veff.score_variants(model,
                                                          dataloader_arguments,
                                                          args.input_vcf,
@@ -203,7 +219,8 @@ def cli_score_variants(command, raw_args):
                                                          seq_length=seq_length,
                                                          std_var_id=args.std_var_id,
                                                          restriction_bed=args.restriction_bed,
-                                                         return_predictions=keep_predictions)
+                                                         return_predictions=keep_predictions,
+                                                         model_outputs = model_outputs)
 
     # tabular files
     if keep_predictions:

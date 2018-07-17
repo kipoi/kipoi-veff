@@ -1145,7 +1145,12 @@ def test_score_variants():
 
     # with cd(model.source_dir):
     res = sp.score_variants(model, dataloader_arguments, vcf_path, out_vcf_fpath,
-                            scores=['diff'], score_kwargs=[{"rc_merging": "mean"}], source="dir")
+                            scores=['diff'], score_kwargs=[{"rc_merging": "mean"}], source="dir",
+                            output_filter=['rbp_prb'])
+
+    res = sp.score_variants(model, dataloader_arguments, vcf_path, out_vcf_fpath,
+                            scores=['diff'], score_kwargs=[{"rc_merging": "mean"}], source="dir",
+                            output_filter=[True], return_predictions=True)
 
     # pass
     #assert filecmp.cmp(out_vcf_fpath, ref_out_vcf_fpath)
@@ -1159,3 +1164,29 @@ def test_score_variants():
     #assert filecmp.cmp(out_vcf_fpath, ref_out_vcf_fpath)
     assert os.path.exists(out_vcf_fpath)
     os.unlink(out_vcf_fpath)
+
+def test_score_variant_subsetting():
+    if INSTALL_REQ:
+        install_model_requirements("DeepSEA/variantEffects", source="kipoi", and_dataloaders=True)
+    model = kipoi.get_model("DeepSEA/variantEffects", source="kipoi")
+    #
+    dataloader_arguments = model.default_dataloader.example_kwargs
+    #
+    model_output_names = model.schema.targets.column_labels
+    # Run the actual predictions
+    vcf_path = os.path.realpath("tests/models/rbp/example_files/variants.vcf")
+    out_vcf_fpath = vcf_path[:-4] + "_DS.vcf"
+
+    for sel_idxs in [[3], [3,4,10]]:
+        bool_idx = np.in1d(np.arange(len(model_output_names)), sel_idxs)
+        str_idx = [model_output_names[sel_idx] for sel_idx in sel_idxs]
+        for idx in [sel_idxs, bool_idx, str_idx]:
+            with cd(model.source_dir):
+                idx_here = idx
+                if len(idx) ==1:
+                    idx_here = idx_here[0]
+                res = sp.score_variants(model, dataloader_arguments, vcf_path, out_vcf_fpath,
+                                        scores=['diff'], score_kwargs=[{"rc_merging": "mean"}], source="dir",
+                                        output_filter=idx_here,
+                                        return_predictions=True)
+                assert set(res['diff'].columns) == set(str_idx)

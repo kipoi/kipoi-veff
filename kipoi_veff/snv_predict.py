@@ -42,11 +42,22 @@ def analyse_model_preds(model, ref, alt, diff_types,
             preds_out, pred_labels = output_reshaper.flatten(model.predict_on_batch(seqs[k]))
         if out_annotation is None:
             out_annotation = pred_labels
-            output_filter = np.zeros(pred_labels.shape[0]) == 0
             # determine which outputs should be selected
             if output_filter is None:
+                output_filter = np.zeros(pred_labels.shape[0]) == 0
+            else:
+                if isinstance(output_filter, six.string_types) or isinstance(output_filter, int):
+                    output_filter = np.array([output_filter])
+                elif isinstance(output_filter, list):
+                    output_filter = np.array(output_filter)
+                # Make sure it is a boolean filter of the right shape
                 if output_filter.dtype == bool:
                     assert (output_filter.shape == out_annotation.shape)
+                # Numerical index?
+                elif np.issubdtype(output_filter.dtype, np.number):
+                    assert np.max(output_filter) <= out_annotation.shape[0]
+                    output_filter = np.in1d(np.arange(out_annotation.shape[0]), output_filter)
+                # Assumed that string output label
                 else:
                     assert np.all(np.in1d(output_filter, out_annotation))
                     output_filter = np.in1d(out_annotation, output_filter)
@@ -680,7 +691,8 @@ def score_variants(model,
                    seq_length=None,
                    std_var_id=False,
                    restriction_bed=None,
-                   return_predictions=False):
+                   return_predictions=False,
+                   output_filter = None):
     """Score variants: annotate the vcf file using
     model predictions for the refernece and alternative alleles
     Args:
@@ -698,6 +710,7 @@ def score_variants(model,
       restriction_bed: If dataloader can be run with regions generated from the VCF then only variants that overlap
       regions defined in `restriction_bed` will be tested.
       return_predictions: return generated predictions also as pandas dataframe.
+      output_filter: If set then either a boolean filter or a named filter for model outputs that are reported.
     """
     # TODO - call this function in kipoi_veff.cli.cli_score_variants
     # TODO: Add tests
@@ -722,6 +735,6 @@ def score_variants(model,
                         dataloader_args=dl_args,
                         num_workers=num_workers,
                         vcf_to_region=vcf_to_region,
-                        evaluation_function_kwargs={'diff_types': dts},
+                        evaluation_function_kwargs={'diff_types': dts, 'output_filter': output_filter},
                         sync_pred_writer=writer,
                         return_predictions=return_predictions)
