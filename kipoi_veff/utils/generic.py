@@ -451,17 +451,17 @@ def _get_specialtype(dataloader, seq_field):
 
 
 def _get_seq_fields(model):
-    if model.postprocessing.variant_effects is None:
+    if model.postprocessing.get("variant_effects", None) is None:
         raise Exception("Model does not support var_effect_prediction")
     else:
-        return model.postprocessing.variant_effects.seq_input
+        return model.postprocessing["variant_effects"].seq_input
 
 
 def _get_model_use_seq_only_rc(model):
-    if model.postprocessing.variant_effects is None:
+    if model.postprocessing.get("variant_effects", None) is None:
         return False
     else:
-        return model.postprocessing.variant_effects.use_rc
+        return model.postprocessing["variant_effects"].use_rc
 
 
 def _get_seq_shape(dataloader, seq_field):
@@ -475,10 +475,10 @@ def _get_seq_shape(dataloader, seq_field):
 
 
 def _get_dl_bed_fields(dataloader):
-    if dataloader.postprocessing.variant_effects is None:
+    if dataloader.postprocessing.get("variant_effects", None) is None:
         return None
     else:
-        return dataloader.postprocessing.variant_effects.bed_input
+        return dataloader.postprocessing["variant_effects"].bed_input
 
 
 # TODO - can we find a better name for this class?

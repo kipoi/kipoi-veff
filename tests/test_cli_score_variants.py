@@ -78,7 +78,7 @@ def test_predict_variants_example_multimodel(file_format, tmpdir):
     import json
     dataloader_kwargs_str = json.dumps(dataloader_kwargs)
 
-    args = ["python", "kipoi_veff",
+    args = ["python", os.path.abspath("./kipoi_veff/cli.py"),
             "score_variants",
             # "./",  # directory
             example_dirs[0], example_dirs[1],
@@ -94,7 +94,7 @@ def test_predict_variants_example_multimodel(file_format, tmpdir):
         args.append(INSTALL_FLAG)
 
     returncode = subprocess.call(args=args,
-                                 cwd=os.path.realpath(main_example_dir) + "/../../")
+                                 cwd=os.path.realpath(main_example_dir) + "/../../../")
     assert returncode == 0
 
     assert os.path.exists(tmpfile)
@@ -155,7 +155,7 @@ def test_predict_variants_example(example, restricted_bed, file_format, tmpdir):
     import json
     dataloader_kwargs_str = json.dumps(dataloader_kwargs)
 
-    args = ["python", "kipoi_veff",
+    args = ["python", os.path.abspath("./kipoi_veff/cli.py"),
             "score_variants",
             # "./",  # directory
             example_dir,
@@ -173,8 +173,7 @@ def test_predict_variants_example(example, restricted_bed, file_format, tmpdir):
     if restricted_bed:
         args += ["--restriction_bed", example_dir + "/example_files/restricted_regions.bed"]
 
-    returncode = subprocess.call(args=args,
-                                 cwd=os.path.realpath(example_dir) + "/../../")
+    returncode = subprocess.call(args=args, cwd=".")
     assert returncode == 0
 
     assert os.path.exists(tmpfile)

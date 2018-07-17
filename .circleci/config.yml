@@ -15,8 +15,13 @@ variables:
       command: pip install genomelake --no-deps
   install_kipoi: &install_kipoi
     run:
-      name: Install Kipoi-veff
-      command: pip install '.[develop]'
+      name: Install Kipoi
+      command: |
+        git clone git@github.com:kipoi/kipoi.git kipoi_pkg
+        cd kipoi_pkg
+        git checkout plugin  # test already the future version of Kipoi
+        pip install '.[develop]'
+        cd ..
   install_requests: &install_requests
     run:
       name: Install requirements for requests correctly

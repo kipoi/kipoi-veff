@@ -88,7 +88,7 @@ def test_custom_fns():
             for i3, pp_yaml in enumerate([postproc_yaml, dupl_name_postproc_yaml]):
                 pps = VarEffectModelArgs.from_config(from_yaml(pp_yaml % (diff_str_here, mydiff_args)))
                 model = dummy_container()
-                model.postprocessing = pps
+                model.postprocessing = {"variant_effects": pps}
                 if i3 == 1:
                     with pytest.raises(Exception):
                         get_avail_scoring_fns(model)
@@ -107,7 +107,7 @@ def test_custom_fns():
                         assert default_scoring_fns == ["deepsea_effect"]
     model = dummy_container()
     model.postprocessing = dummy_container()
-    model.postprocessing.variant_effects = None
+    model.postprocessing = {}
     with pytest.raises(Exception):
         get_avail_scoring_fns(model)
 
@@ -115,15 +115,14 @@ def test_custom_fns():
 def test_ret():
     pps = VarEffectModelArgs.from_config(from_yaml(postproc_yaml % ('', args_w_default)))
     model = dummy_container()
-    model.postprocessing = pps
+    model.postprocessing = {"variant_effects": pps}
     avail_scoring_fns, avail_scoring_fn_def_args, avail_scoring_fn_names,\
         default_scoring_fns = get_avail_scoring_fns(model)
 
 
 postproc_yaml_nofndef = """
-variant_effects:
-  seq_input:
-    - seq
+seq_input:
+  - seq
 """
 
 
@@ -131,7 +130,7 @@ variant_effects:
 def test_default_diff():
     pps = VarEffectModelArgs.from_config(from_yaml(postproc_yaml_nofndef))
     model = dummy_container()
-    model.postprocessing = pps
+    model.postprocessing = {"variant_effects": pps}
     avail_scoring_fns, avail_scoring_fn_def_args, avail_scoring_fn_names, default_scoring_fns =\
         get_avail_scoring_fns(model)
     #
@@ -143,44 +142,42 @@ def test_default_diff():
 
 # test duplication of names
 dupl_name_yaml = """
-variant_effects:
-  seq_input:
-    - seq
-  scoring_functions:
-    - type: logit
-      name: logit
-    - type: logit
-      name: logit
+seq_input:
+  - seq
+scoring_functions:
+  - type: logit
+    name: logit
+  - type: logit
+    name: logit
 """
 
 
 def test_dupl_name():
     pps = VarEffectModelArgs.from_config(from_yaml(dupl_name_yaml))
     model = dummy_container()
-    model.postprocessing = pps
+    model.postprocessing = {"variant_efffects": pps}
     with pytest.raises(Exception):
         get_avail_scoring_fns(model)
 
 
 # test modification of name with custom_
 rename_custom_yaml = """
-variant_effects:
-  seq_input:
-    - seq
-  scoring_functions:
-    - name: logit
-      type: custom
-      defined_as: tests/data/dummy_diff.py::LogitAlt
-      args:
-        rc_merging:
-          default: "max"
+seq_input:
+  - seq
+scoring_functions:
+  - name: logit
+    type: custom
+    defined_as: tests/data/dummy_diff.py::LogitAlt
+    args:
+      rc_merging:
+        default: "max"
 """
 
 
 def test_rename_custom():
     pps = VarEffectModelArgs.from_config(from_yaml(rename_custom_yaml))
     model = dummy_container()
-    model.postprocessing = pps
+    model.postprocessing = {"variant_effects": pps}
     avail_scoring_fns, avail_scoring_fn_def_args, avail_scoring_fn_names, default_scoring_fns =\
         get_avail_scoring_fns(model)
     output = [avail_scoring_fn_names]
@@ -190,18 +187,17 @@ def test_rename_custom():
 
 
 postproc_autodefault_yaml = """
-variant_effects:
-  seq_input:
-    - seq
-  scoring_functions:
-    - type: logit
-    - type: deepsea_effect
-    - name: mydiff
-      type: custom
-      defined_as: tests/data/dummy_diff.py::LogitAlt
-      args:
-        rc_merging:
-          default: "max"
+seq_input:
+  - seq
+scoring_functions:
+  - type: logit
+  - type: deepsea_effect
+  - name: mydiff
+    type: custom
+    defined_as: tests/data/dummy_diff.py::LogitAlt
+    args:
+      rc_merging:
+        default: "max"
 """
 
 
@@ -209,7 +205,7 @@ variant_effects:
 def test_auto_default():
     pps = VarEffectModelArgs.from_config(from_yaml(postproc_autodefault_yaml))
     model = dummy_container()
-    model.postprocessing = pps
+    model.postprocessing = {"variant_effects": pps}
     avail_scoring_fns, avail_scoring_fn_def_args, avail_scoring_fn_names, default_scoring_fns = \
         get_avail_scoring_fns(model)
     output = [avail_scoring_fn_names]
@@ -218,19 +214,18 @@ def test_auto_default():
 
 
 postproc_cli_yaml = """
-variant_effects:
-  seq_input:
-    - seq
-  scoring_functions:
-    - type: logit
-    - type: deepsea_effect
+seq_input:
+  - seq
+scoring_functions:
+  - type: logit
+  - type: deepsea_effect
 """
 
 
 def test__get_scoring_fns():
     pps = VarEffectModelArgs.from_config(from_yaml(postproc_cli_yaml))
     model = dummy_container()
-    model.postprocessing = pps
+    model.postprocessing = {"variant_effects": pps}
     scorers = [{"logit": Logit, "deepsea_effect": DeepSEA_effect}, {"logit": Logit}, {}]
     kwargs = {"rc_merging": 'max'}
     for sel_scoring_labels, scorer in zip([[], ["logit"], ["inexistent", "logit"], ["all"]], scorers):

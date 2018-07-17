@@ -30,7 +30,7 @@ import copy
 
 warnings.filterwarnings('ignore')
 
-from kipoi.components import ArraySchema, ModelSchema
+from kipoi.specs import ArraySchema, ModelSchema
 from related import from_yaml
 from kipoi_veff.utils import OutputReshaper
 from utils import compare_vcfs

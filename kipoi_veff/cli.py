@@ -455,3 +455,9 @@ def cli_main(command, raw_args):
                 args.command, commands_str))
     command_fn = command_functions[args.command]
     command_fn(args.command, raw_args[1:])
+
+
+if __name__ == '__main__':
+    command = sys.argv[1]
+    raw_args = sys.argv[1:]
+    cli_main(command, raw_args)
