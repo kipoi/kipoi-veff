@@ -12,7 +12,9 @@ variables:
   install_pip_deps: &install_pip_deps
     run:
       name: Install pip dependencies
-      command: pip install genomelake --no-deps
+      command:
+        pip install genomelake --no-deps
+        pip install pyfaidx
   install_kipoi: &install_kipoi
     run:
       name: Install Kipoi
