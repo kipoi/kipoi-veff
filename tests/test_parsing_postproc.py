@@ -3,14 +3,6 @@ from related import from_yaml
 from kipoi_veff.specs import VarEffectModelArgs, VarEffectDataLoaderArgs, VarEffectFuncType
 
 
-yaml_in_no_args = """
-"""
-
-
-def test_insufficient_info():
-    assert VarEffectModelArgs.from_config(from_yaml(yaml_in_no_args)).get("variant_effects", None) is None
-
-
 yaml_in_simple = """
 seq_input:
   - seq

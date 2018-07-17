@@ -73,3 +73,4 @@ target/
 logfile.txt
 
 tests/models/rbp/example_files/variants.vcf.gz.tbi
+/tests/models/rbp/example_files/variants_DS.vcf
