@@ -30,7 +30,7 @@ variables:
       name: Run tests
       command: |
         mkdir test-reports
-        py.test --cov=kipoi-veff/ tests/ -n 4 --no-cov-on-fail --junitxml=test-reports/junit.xml
+        py.test --cov=kipoi_veff/ tests/ -n 4 --no-cov-on-fail --junitxml=test-reports/junit.xml
   run_coveralls: &run_coveralls
     run:
       name: run coveralls
