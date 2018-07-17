@@ -22,6 +22,10 @@ variables:
         git checkout plugin  # test already the future version of Kipoi
         pip install '.[develop]'
         cd ..
+  install_kipoi_veff: &install_kipoi_veff
+    run:
+      name: Install Kipoi-veff
+      command: pip install '.[develop]'
   install_requests: &install_requests
     run:
       name: Install requirements for requests correctly
@@ -60,6 +64,7 @@ jobs:
       - *update_conda
       - *install_pip_deps
       - *install_kipoi
+      - *install_kipoi_veff
       - *kipoi_ls
       - *run_tests
       - *run_coveralls
@@ -75,6 +80,7 @@ jobs:
       - *update_conda
       - *install_pip_deps
       - *install_kipoi
+      - *install_kipoi_veff
       - *kipoi_ls
       - *run_tests
       - *store_test_results
