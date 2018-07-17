@@ -548,7 +548,7 @@ class MutationMapPlotter(object):
                 ovlp_var['ref'].append(ref)
                 ovlp_var['alt'].append(alt)
 
-        from kipoi.external.concise.seqplotting_deps import encodeDNA
+        from kipoi_veff.external.concise.seqplotting_deps import encodeDNA
         from kipoi_veff.utils.plot import seqlogo_heatmap
         import matplotlib.pyplot as plt
         if cmap is None:

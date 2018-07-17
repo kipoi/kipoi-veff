@@ -1,5 +1,5 @@
 import numpy as np
-from kipoi.external.concise.seqplotting_deps import add_letter_to_axis, VOCABS, letter_polygons
+from kipoi_veff.external.concise.seqplotting_deps import add_letter_to_axis, VOCABS, letter_polygons
 
 
 def center_cmap(cmap, vmax, vmin, center):
