@@ -1,1 +1,1 @@
-from kipoi.postprocessing.variant_effects import LogitAlt
+from kipoi_veff.scores import LogitAlt

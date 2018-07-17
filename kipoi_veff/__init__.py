@@ -17,11 +17,9 @@ from .snv_predict import predict_snvs, analyse_model_preds, score_variants
 from .utils import ModelInfoExtractor, SnvPosRestrictedRg, SnvCenteredRg, ensure_tabixed_vcf, VcfWriter, \
     BedOverlappingRg
 
-# TODO - exclude
 from .mutation_map import MutationMap
 
 # Required by kipoi
 from .cli import cli_main
-# kipoi-interpret doesn' need any global variables
 from .specs import VarEffectModelArgs as ModelParser
 from .specs import VarEffectDataLoaderArgs as DataloaderParser

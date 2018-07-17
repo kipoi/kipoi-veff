@@ -699,7 +699,7 @@ def score_variants(model,
       regions defined in `restriction_bed` will be tested.
       return_predictions: return generated predictions also as pandas dataframe.
     """
-    # TODO - call this function in kipoi.cli.postproc.cli_score_variants
+    # TODO - call this function in kipoi_veff.cli.cli_score_variants
     # TODO: Add tests
     import kipoi
     in_vcf_path_abs = os.path.realpath(input_vcf)
