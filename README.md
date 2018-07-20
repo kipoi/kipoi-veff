@@ -141,7 +141,6 @@ Args:
 ## Development setup
 
 ```sh
-# Install dependencies
 git clone https://github.com/kipoi/kipoi-veff.git
 cd kipoi-veff
 pip install -e '.[develop]'
