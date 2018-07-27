@@ -692,7 +692,7 @@ def score_variants(model,
                    std_var_id=False,
                    restriction_bed=None,
                    return_predictions=False,
-                   output_filter = None):
+                   model_outputs = None):
     """Score variants: annotate the vcf file using
     model predictions for the refernece and alternative alleles
     Args:
@@ -710,7 +710,7 @@ def score_variants(model,
       restriction_bed: If dataloader can be run with regions generated from the VCF then only variants that overlap
       regions defined in `restriction_bed` will be tested.
       return_predictions: return generated predictions also as pandas dataframe.
-      output_filter: If set then either a boolean filter or a named filter for model outputs that are reported.
+      model_outputs: If set then either a boolean filter or a named filter for model outputs that are reported.
     """
     # TODO - call this function in kipoi_veff.cli.cli_score_variants
     # TODO: Add tests
@@ -735,6 +735,6 @@ def score_variants(model,
                         dataloader_args=dl_args,
                         num_workers=num_workers,
                         vcf_to_region=vcf_to_region,
-                        evaluation_function_kwargs={'diff_types': dts, 'output_filter': output_filter},
+                        evaluation_function_kwargs={'diff_types': dts, 'output_filter': model_outputs},
                         sync_pred_writer=writer,
                         return_predictions=return_predictions)

@@ -1146,11 +1146,11 @@ def test_score_variants():
     # with cd(model.source_dir):
     res = sp.score_variants(model, dataloader_arguments, vcf_path, out_vcf_fpath,
                             scores=['diff'], score_kwargs=[{"rc_merging": "mean"}], source="dir",
-                            output_filter=['rbp_prb'])
+                            model_outputs=['rbp_prb'])
 
     res = sp.score_variants(model, dataloader_arguments, vcf_path, out_vcf_fpath,
                             scores=['diff'], score_kwargs=[{"rc_merging": "mean"}], source="dir",
-                            output_filter=[True], return_predictions=True)
+                            model_outputs=[True], return_predictions=True)
 
     # pass
     #assert filecmp.cmp(out_vcf_fpath, ref_out_vcf_fpath)
@@ -1187,6 +1187,6 @@ def test_score_variant_subsetting():
                     idx_here = idx_here[0]
                 res = sp.score_variants(model, dataloader_arguments, vcf_path, out_vcf_fpath,
                                         scores=['diff'], score_kwargs=[{"rc_merging": "mean"}], source="dir",
-                                        output_filter=idx_here,
+                                        model_outputs=idx_here,
                                         return_predictions=True)
                 assert set(res['diff'].columns) == set(str_idx)

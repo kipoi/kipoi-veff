@@ -117,7 +117,7 @@ score_variants(model,
                std_var_id=False,
                restriction_bed=None,
                return_predictions=False,
-               output_filter = None)
+               model_outputs = None)
 ```
 
 Args:
@@ -135,7 +135,7 @@ Args:
 - restriction_bed: If dataloader can be run with regions generated from the VCF then only variants that overlap
 - regions defined in `restriction_bed` will be tested.
 - return_predictions: return generated predictions also as pandas dataframe.
-- output_filter: If set then either a boolean filter or a named filter for model outputs that are reported.
+- model_outputs: If set then either a boolean filter or a named filter for model outputs that are reported.
 
 
 ## Development setup

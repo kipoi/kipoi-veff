@@ -220,7 +220,7 @@ def cli_score_variants(command, raw_args):
                                                          std_var_id=args.std_var_id,
                                                          restriction_bed=args.restriction_bed,
                                                          return_predictions=keep_predictions,
-                                                         output_filter = model_outputs)
+                                                         model_outputs= model_outputs)
 
     # tabular files
     if keep_predictions:
