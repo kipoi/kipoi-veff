@@ -144,11 +144,11 @@ def _write_regions_from_vcf(vcf_iter, vcf_id_generator_fn, int_write_fn, region_
 # greatly simplify this one:
 # Check that batching works
 # check that query_vcf_records and query_process_lines is always the same for all batches and that it is complete
-def test__generate_seq_sets_mutmap_iter():
+def test__generate_seq_sets_mutmap_iter(tmpdir):
     from pybedtools import BedTool
     model_dir = "tests/models/rbp/"
     vcf_sub_path = "example_files/variants.vcf"
-    vcf_path = temp(model_dir + vcf_sub_path)
+    vcf_path = temp(model_dir + vcf_sub_path, tmpdir)
     vcf_path = kipoi_veff.ensure_tabixed_vcf(vcf_path)
     # for any given input type: list, dict and np.array return 4 identical sets, except for mutated bases on one position
     seq_len = 101
@@ -322,12 +322,12 @@ def test_merged_intervals_seq():
         mm.merged_intervals_seq(ranges_dict, sequence_bad, regions_unif, meta_field_unif_r)
 
 
-def test_MutationMapDataMerger():
+def test_MutationMapDataMerger(tmpdir):
     if sys.version_info[0] == 2:
         pytest.skip("Skip")
     model_dir = "tests/models/rbp/"
     vcf_sub_path = "example_files/variants.vcf"
-    vcf_path = temp(model_dir + vcf_sub_path)
+    vcf_path = temp(model_dir + vcf_sub_path, tmpdir)
     vcf_path = kipoi_veff.ensure_tabixed_vcf(vcf_path)
     seq_len = 10
     model_info_extractor = DummyModelInfo(seq_len)

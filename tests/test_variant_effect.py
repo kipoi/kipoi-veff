@@ -338,8 +338,8 @@ def test_DNAStringArrayConverter():
         conv = kipoi_veff.utils.generic.ReshapeDnaString((1, 8))
 
 
-def test_search_vcf_in_regions():
-    vcf_path = kipoi_veff.ensure_tabixed_vcf(temp("tests/models/rbp/example_files/variants.vcf"))
+def test_search_vcf_in_regions(tmpdir):
+    vcf_path = kipoi_veff.ensure_tabixed_vcf(temp("tests/models/rbp/example_files/variants.vcf", tmpdir))
     vcf_fh = cyvcf2.VCF(vcf_path, "r")
     ints1 = {"chr": ["chr22"] * 2, "start": [21541589, 30630701], "end": [21541953, 36702138], "strand": ["*"] * 2}
     ints2 = {"chr": ["chr22"] * 2, "start": [30630219, 30630220], "end": [30630222, 30630222], "strand": ["*"] * 2}
@@ -386,10 +386,10 @@ def test_get_genomicranges_line():
             assert first_entry[k][0] == ints[k][i]
 
 
-def test_by_id_vcf_in_regions():
+def test_by_id_vcf_in_regions(tmpdir):
     from kipoi_veff.utils.generic import default_vcf_id_gen
     from kipoi_veff.snv_predict import get_variants_in_regions_sequential_vcf
-    vcf_path = kipoi_veff.ensure_tabixed_vcf(temp("tests/models/rbp/example_files/variants.vcf"))
+    vcf_path = kipoi_veff.ensure_tabixed_vcf(temp("tests/models/rbp/example_files/variants.vcf", tmpdir))
     vcf_fh = cyvcf2.VCF(vcf_path, "r")
     ints1 = {"chr": [], "start": [], "end": [], "strand": [], "id": []}
     for rec in vcf_fh:
@@ -421,9 +421,9 @@ def test_by_id_vcf_in_regions():
         get_variants_in_regions_sequential_vcf(model_input, seq_to_meta, vcf_fh, default_vcf_id_gen)
 
 
-def test_get_preproc_conv():
+def test_get_preproc_conv(tmpdir):
     import itertools
-    vcf_path = kipoi_veff.ensure_tabixed_vcf(temp("tests/models/rbp/example_files/variants.vcf"))
+    vcf_path = kipoi_veff.ensure_tabixed_vcf(temp("tests/models/rbp/example_files/variants.vcf", tmpdir))
     vcf_fh = cyvcf2.VCF(vcf_path, "r")
     ints1 = {"chr": ["chr22"] * 4, "start": [21541589, 30630701, 21541589, 200],
              "end": [21541953, 36702138, 21541953, 500], "strand": ["*"] * 4}
@@ -524,7 +524,7 @@ def test_OneHotSequenceMutator():
         assert mut_set == ref_mut_set
 
 
-def test_var_eff_pred_varseq():
+def test_var_eff_pred_varseq(tmpdir):
     if sys.version_info[0] == 2:
         pytest.skip("rbp example not supported on python 2 ")
     model_dir = "tests/models/var_seqlen_model/"
@@ -542,7 +542,7 @@ def test_var_eff_pred_varseq():
         "intervals_file": "example_files/variant_centered_intervals.tsv"
     }
     dataloader_arguments = {k: model_dir + v for k, v in dataloader_arguments.items()}
-    vcf_path = temp(model_dir + "example_files/variants.vcf")
+    vcf_path = temp(model_dir + "example_files/variants.vcf", tmpdir)
     out_vcf_fpath = model_dir + "example_files/variants_generated.vcf"
     ref_out_vcf_fpath = model_dir + "example_files/variants_ref_out.vcf"
     #
@@ -565,7 +565,7 @@ def test_var_eff_pred_varseq():
     os.unlink(out_vcf_fpath)
 
 
-def test_var_eff_pred():
+def test_var_eff_pred(tmpdir):
     if sys.version_info[0] == 2:
         pytest.skip("rbp example not supported on python 2 ")
     # Take the rbp model
@@ -585,7 +585,7 @@ def test_var_eff_pred():
     dataloader_arguments = {k: model_dir + v for k, v in dataloader_arguments.items()}
     #
     # Run the actual predictions
-    vcf_path = temp(model_dir + "example_files/variants.vcf")
+    vcf_path = temp(model_dir + "example_files/variants.vcf", tmpdir)
     out_vcf_fpath = model_dir + "example_files/variants_generated.vcf"
     ref_out_vcf_fpath = model_dir + "example_files/variants_ref_out.vcf"
     #
@@ -607,7 +607,7 @@ def test_var_eff_pred():
     os.unlink(out_vcf_fpath)
 
 
-def test_var_eff_pred2():
+def test_var_eff_pred2(tmpdir):
     if sys.version_info[0] == 2:
         pytest.skip("rbp example not supported on python 2 ")
     # Take the rbp model
@@ -627,7 +627,7 @@ def test_var_eff_pred2():
     dataloader_arguments = {k: model_dir + v for k, v in dataloader_arguments.items()}
     #
     # Run the actual predictions
-    vcf_path = temp(model_dir + "example_files/variants.vcf")
+    vcf_path = temp(model_dir + "example_files/variants.vcf", tmpdir)
     out_vcf_fpath = model_dir + "example_files/variants_generated2.vcf"
     ref_out_vcf_fpath = model_dir + "example_files/variants_ref_out2.vcf"
     restricted_regions_fpath = model_dir + "example_files/restricted_regions.bed"
@@ -736,9 +736,9 @@ def _write_regions_from_vcf(vcf_iter, vcf_id_generator_fn, int_write_fn, region_
                 int_write_fn(chrom=chrom, start=start, end=end, id=id)
 
 
-def test__generate_pos_restricted_seqs():
+def test__generate_pos_restricted_seqs(tmpdir):
     model_dir = "tests/models/rbp/"
-    vcf_path = temp(model_dir + "example_files/variants.vcf")
+    vcf_path = temp(model_dir + "example_files/variants.vcf", tmpdir)
     tuples = (([21541490, 21541591], [21541491, 21541591]),
               ([21541390, 21541891], [21541541, 21541641]),
               ([21541570, 21541891], [21541571, 21541671]))
@@ -772,9 +772,9 @@ def test_BedOverlappingRg():
             assert all([col in regions_df.columns.tolist() for col in ["chrom", "start", "end"]])
 
 
-def test__generate_snv_centered_seqs():
+def test__generate_snv_centered_seqs(tmpdir):
     model_dir = "tests/models/rbp/"
-    vcf_path = temp(model_dir + "example_files/variants.vcf")
+    vcf_path = temp(model_dir + "example_files/variants.vcf", tmpdir)
     model_info_extractor = DummyModelInfo(101)
     lct = 0
     hdr = None
@@ -810,11 +810,11 @@ def test__generate_snv_centered_seqs():
         assert (regions_df["start"].values == vcf_df["POS"] - int(seq_length / 2) + 1).all()
 
 
-def test__generate_seq_sets():
+def test__generate_seq_sets(tmpdir):
     model_dir = "tests/models/rbp/"
     vcf_sub_path = "example_files/variants.vcf"
 
-    vcf_path = temp(model_dir + vcf_sub_path)
+    vcf_path = temp(model_dir + vcf_sub_path, tmpdir)
     vcf_path = kipoi_veff.ensure_tabixed_vcf(vcf_path)
     # for any given input type: list, dict and np.array return 4 identical sets, except for mutated bases on one position
     seq_len = 101
@@ -986,8 +986,8 @@ def test_subsetting():
                     ret = sp.select_from_dl_batch(RES[k], sel, 20)
 
 
-def test_ensure_tabixed_vcf():
-    vcf_in_fpath = temp("tests/models/rbp/example_files/variants.vcf")
+def test_ensure_tabixed_vcf(tmpdir):
+    vcf_in_fpath = temp("tests/models/rbp/example_files/variants.vcf", tmpdir)
     vcf_path = kipoi_veff.ensure_tabixed_vcf(vcf_in_fpath)
     assert os.path.exists(vcf_path)
     assert vcf_path.endswith(".gz")
@@ -998,8 +998,8 @@ def test_ensure_tabixed_vcf():
     assert vcf_in_fpath_gz == kipoi_veff.ensure_tabixed_vcf(vcf_in_fpath_gz)
 
 
-def test__overlap_vcf_region():
-    vcf_path = kipoi_veff.ensure_tabixed_vcf(temp("tests/models/rbp/example_files/variants.vcf"))
+def test__overlap_vcf_region(tmpdir):
+    vcf_path = kipoi_veff.ensure_tabixed_vcf(temp("tests/models/rbp/example_files/variants.vcf", tmpdir))
     vcf_obj = cyvcf2.VCF(vcf_path)
     all_records = [rec for rec in vcf_obj]
     vcf_obj.close()
@@ -1121,7 +1121,7 @@ def test_get_vcf_to_region():
     assert _get_vcf_to_region(model_info, None, None) is None
 
 
-def test_score_variants():
+def test_score_variants(tmpdir):
     if sys.version_info[0] == 2:
         pytest.skip("rbp example not supported on python 2 ")
     # Take the rbp model
@@ -1139,7 +1139,7 @@ def test_score_variants():
     dataloader_arguments = {k: model_dir + v for k, v in dataloader_arguments.items()}
     #
     # Run the actual predictions
-    vcf_path = temp(model_dir + "example_files/variants.vcf")
+    vcf_path = temp(model_dir + "example_files/variants.vcf", tmpdir)
     out_vcf_fpath = model_dir + "example_files/variants_generated.vcf"
     ref_out_vcf_fpath = model_dir + "example_files/variants_ref_out.vcf"
 
@@ -1165,7 +1165,7 @@ def test_score_variants():
     assert os.path.exists(out_vcf_fpath)
     os.unlink(out_vcf_fpath)
 
-def test_score_variant_subsetting():
+def test_score_variant_subsetting(tmpdir):
     if INSTALL_REQ:
         install_model_requirements("DeepSEA/variantEffects", source="kipoi", and_dataloaders=True)
     model = kipoi.get_model("DeepSEA/variantEffects", source="kipoi")
@@ -1174,7 +1174,7 @@ def test_score_variant_subsetting():
     #
     model_output_names = model.schema.targets.column_labels
     # Run the actual predictions
-    vcf_path = os.path.realpath(temp("tests/models/rbp/example_files/variants.vcf"))
+    vcf_path = os.path.realpath(temp("tests/models/rbp/example_files/variants.vcf", tmpdir))
     out_vcf_fpath = vcf_path[:-4] + "_DS.vcf"
 
     for sel_idxs in [[3], [3, 4, 10]]:
