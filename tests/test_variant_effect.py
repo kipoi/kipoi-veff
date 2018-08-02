@@ -33,7 +33,7 @@ warnings.filterwarnings('ignore')
 from kipoi.specs import ArraySchema, ModelSchema
 from related import from_yaml
 from kipoi_veff.utils import OutputReshaper
-from utils import compare_vcfs
+from utils import compare_vcfs, temp
 
 CLS = ArraySchema
 MS = ModelSchema
@@ -339,7 +339,7 @@ def test_DNAStringArrayConverter():
 
 
 def test_search_vcf_in_regions():
-    vcf_path = kipoi_veff.ensure_tabixed_vcf("tests/models/rbp/example_files/variants.vcf")
+    vcf_path = kipoi_veff.ensure_tabixed_vcf(temp("tests/models/rbp/example_files/variants.vcf"))
     vcf_fh = cyvcf2.VCF(vcf_path, "r")
     ints1 = {"chr": ["chr22"] * 2, "start": [21541589, 30630701], "end": [21541953, 36702138], "strand": ["*"] * 2}
     ints2 = {"chr": ["chr22"] * 2, "start": [30630219, 30630220], "end": [30630222, 30630222], "strand": ["*"] * 2}
@@ -389,7 +389,7 @@ def test_get_genomicranges_line():
 def test_by_id_vcf_in_regions():
     from kipoi_veff.utils.generic import default_vcf_id_gen
     from kipoi_veff.snv_predict import get_variants_in_regions_sequential_vcf
-    vcf_path = kipoi_veff.ensure_tabixed_vcf("tests/models/rbp/example_files/variants.vcf")
+    vcf_path = kipoi_veff.ensure_tabixed_vcf(temp("tests/models/rbp/example_files/variants.vcf"))
     vcf_fh = cyvcf2.VCF(vcf_path, "r")
     ints1 = {"chr": [], "start": [], "end": [], "strand": [], "id": []}
     for rec in vcf_fh:
@@ -423,7 +423,7 @@ def test_by_id_vcf_in_regions():
 
 def test_get_preproc_conv():
     import itertools
-    vcf_path = kipoi_veff.ensure_tabixed_vcf("tests/models/rbp/example_files/variants.vcf")
+    vcf_path = kipoi_veff.ensure_tabixed_vcf(temp("tests/models/rbp/example_files/variants.vcf"))
     vcf_fh = cyvcf2.VCF(vcf_path, "r")
     ints1 = {"chr": ["chr22"] * 4, "start": [21541589, 30630701, 21541589, 200],
              "end": [21541953, 36702138, 21541953, 500], "strand": ["*"] * 4}
@@ -542,7 +542,7 @@ def test_var_eff_pred_varseq():
         "intervals_file": "example_files/variant_centered_intervals.tsv"
     }
     dataloader_arguments = {k: model_dir + v for k, v in dataloader_arguments.items()}
-    vcf_path = model_dir + "example_files/variants.vcf"
+    vcf_path = temp(model_dir + "example_files/variants.vcf")
     out_vcf_fpath = model_dir + "example_files/variants_generated.vcf"
     ref_out_vcf_fpath = model_dir + "example_files/variants_ref_out.vcf"
     #
@@ -585,7 +585,7 @@ def test_var_eff_pred():
     dataloader_arguments = {k: model_dir + v for k, v in dataloader_arguments.items()}
     #
     # Run the actual predictions
-    vcf_path = model_dir + "example_files/variants.vcf"
+    vcf_path = temp(model_dir + "example_files/variants.vcf")
     out_vcf_fpath = model_dir + "example_files/variants_generated.vcf"
     ref_out_vcf_fpath = model_dir + "example_files/variants_ref_out.vcf"
     #
@@ -627,7 +627,7 @@ def test_var_eff_pred2():
     dataloader_arguments = {k: model_dir + v for k, v in dataloader_arguments.items()}
     #
     # Run the actual predictions
-    vcf_path = model_dir + "example_files/variants.vcf"
+    vcf_path = temp(model_dir + "example_files/variants.vcf")
     out_vcf_fpath = model_dir + "example_files/variants_generated2.vcf"
     ref_out_vcf_fpath = model_dir + "example_files/variants_ref_out2.vcf"
     restricted_regions_fpath = model_dir + "example_files/restricted_regions.bed"
@@ -738,7 +738,7 @@ def _write_regions_from_vcf(vcf_iter, vcf_id_generator_fn, int_write_fn, region_
 
 def test__generate_pos_restricted_seqs():
     model_dir = "tests/models/rbp/"
-    vcf_path = model_dir + "example_files/variants.vcf"
+    vcf_path = temp(model_dir + "example_files/variants.vcf")
     tuples = (([21541490, 21541591], [21541491, 21541591]),
               ([21541390, 21541891], [21541541, 21541641]),
               ([21541570, 21541891], [21541571, 21541671]))
@@ -774,7 +774,7 @@ def test_BedOverlappingRg():
 
 def test__generate_snv_centered_seqs():
     model_dir = "tests/models/rbp/"
-    vcf_path = model_dir + "example_files/variants.vcf"
+    vcf_path = temp(model_dir + "example_files/variants.vcf")
     model_info_extractor = DummyModelInfo(101)
     lct = 0
     hdr = None
@@ -814,7 +814,7 @@ def test__generate_seq_sets():
     model_dir = "tests/models/rbp/"
     vcf_sub_path = "example_files/variants.vcf"
 
-    vcf_path = model_dir + vcf_sub_path
+    vcf_path = temp(model_dir + vcf_sub_path)
     vcf_path = kipoi_veff.ensure_tabixed_vcf(vcf_path)
     # for any given input type: list, dict and np.array return 4 identical sets, except for mutated bases on one position
     seq_len = 101
@@ -987,7 +987,7 @@ def test_subsetting():
 
 
 def test_ensure_tabixed_vcf():
-    vcf_in_fpath = "tests/models/rbp/example_files/variants.vcf"
+    vcf_in_fpath = temp("tests/models/rbp/example_files/variants.vcf")
     vcf_path = kipoi_veff.ensure_tabixed_vcf(vcf_in_fpath)
     assert os.path.exists(vcf_path)
     assert vcf_path.endswith(".gz")
@@ -999,7 +999,7 @@ def test_ensure_tabixed_vcf():
 
 
 def test__overlap_vcf_region():
-    vcf_path = kipoi_veff.ensure_tabixed_vcf("tests/models/rbp/example_files/variants.vcf")
+    vcf_path = kipoi_veff.ensure_tabixed_vcf(temp("tests/models/rbp/example_files/variants.vcf"))
     vcf_obj = cyvcf2.VCF(vcf_path)
     all_records = [rec for rec in vcf_obj]
     vcf_obj.close()
@@ -1139,7 +1139,7 @@ def test_score_variants():
     dataloader_arguments = {k: model_dir + v for k, v in dataloader_arguments.items()}
     #
     # Run the actual predictions
-    vcf_path = model_dir + "example_files/variants.vcf"
+    vcf_path = temp(model_dir + "example_files/variants.vcf")
     out_vcf_fpath = model_dir + "example_files/variants_generated.vcf"
     ref_out_vcf_fpath = model_dir + "example_files/variants_ref_out.vcf"
 
@@ -1174,16 +1174,16 @@ def test_score_variant_subsetting():
     #
     model_output_names = model.schema.targets.column_labels
     # Run the actual predictions
-    vcf_path = os.path.realpath("tests/models/rbp/example_files/variants.vcf")
+    vcf_path = os.path.realpath(temp("tests/models/rbp/example_files/variants.vcf"))
     out_vcf_fpath = vcf_path[:-4] + "_DS.vcf"
 
-    for sel_idxs in [[3], [3,4,10]]:
+    for sel_idxs in [[3], [3, 4, 10]]:
         bool_idx = np.in1d(np.arange(len(model_output_names)), sel_idxs)
         str_idx = [model_output_names[sel_idx] for sel_idx in sel_idxs]
         for idx in [sel_idxs, bool_idx, str_idx]:
             with cd(model.source_dir):
                 idx_here = idx
-                if len(idx) ==1:
+                if len(idx) == 1:
                     idx_here = idx_here[0]
                 res = sp.score_variants(model, dataloader_arguments, vcf_path, out_vcf_fpath,
                                         scores=['diff'], score_kwargs=[{"rc_merging": "mean"}], source="dir",

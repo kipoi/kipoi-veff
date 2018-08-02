@@ -15,3 +15,11 @@ def compare_vcfs(fpath1, fpath2):
             assert np.round(float(i1[k]), min_round) == np.round(float(i2[k]), min_round)
     fh2.close()
     fh1.close()
+
+
+def temp(fpath, tmpdir):
+    from shutil import copyfile
+    from uuid import uuid4
+    tmp_fpath = str(tmpdir.join(str(uuid4())))
+    copyfile(fpath, tmp_fpath)
+    return tmp_fpath

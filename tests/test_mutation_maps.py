@@ -22,6 +22,7 @@ warnings.filterwarnings('ignore')
 from kipoi_veff import mutation_map as mm
 from kipoi_veff import snv_predict as sp
 from kipoi_veff.utils import is_indel_wrapper
+from utils import temp
 
 
 class DummyModelInfo(object):
@@ -147,7 +148,7 @@ def test__generate_seq_sets_mutmap_iter():
     from pybedtools import BedTool
     model_dir = "tests/models/rbp/"
     vcf_sub_path = "example_files/variants.vcf"
-    vcf_path = model_dir + vcf_sub_path
+    vcf_path = temp(model_dir + vcf_sub_path)
     vcf_path = kipoi_veff.ensure_tabixed_vcf(vcf_path)
     # for any given input type: list, dict and np.array return 4 identical sets, except for mutated bases on one position
     seq_len = 101
@@ -326,7 +327,7 @@ def test_MutationMapDataMerger():
         pytest.skip("Skip")
     model_dir = "tests/models/rbp/"
     vcf_sub_path = "example_files/variants.vcf"
-    vcf_path = model_dir + vcf_sub_path
+    vcf_path = temp(model_dir + vcf_sub_path)
     vcf_path = kipoi_veff.ensure_tabixed_vcf(vcf_path)
     seq_len = 10
     model_info_extractor = DummyModelInfo(seq_len)
