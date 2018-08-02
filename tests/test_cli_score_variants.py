@@ -6,7 +6,7 @@ import yaml
 import pandas as pd
 import config
 # import filecmp
-from utils import compare_vcfs
+from utils import compare_vcfs, temp
 from kipoi.readers import HDF5Reader
 import numpy as np
 
@@ -85,7 +85,7 @@ def test_predict_variants_example_multimodel(file_format, tmpdir):
             "--source=dir",
             "--batch_size=4",
             "--dataloader_args='%s'" % dataloader_kwargs_str,
-            "--input_vcf", main_example_dir + "/example_files/variants.vcf",
+            "--input_vcf", temp(main_example_dir + "/example_files/variants.vcf", tmpdir),
             # this one was now gone in the master?!
             "--output_vcf", vcf_tmpfile,
             "--extra_output", tmpfile]
@@ -162,7 +162,7 @@ def test_predict_variants_example(example, restricted_bed, file_format, tmpdir):
             "--source=dir",
             "--batch_size=4",
             "--dataloader_args='%s'" % dataloader_kwargs_str,
-            "--input_vcf", example_dir + "/example_files/variants.vcf",
+            "--input_vcf", temp(example_dir + "/example_files/variants.vcf", tmpdir),
             # this one was now gone in the master?!
             "--output_vcf", vcf_tmpfile,
             "--extra_output", tmpfile]
