@@ -23,7 +23,7 @@ for file in $(cat ipynb_pages.txt); do
     dir_out=sources/${DIR}/${file}_files
 
     # fix the paths for the original images
-    sed_replace '![img](../docs/theme_dir/img/' '![img](/img/' $file_out
+    sed_replace '![img](../docs/theme_dir/img/' '![img](/veff-docs/img/' $file_out
     # prepend the original ipython notebook link
     echo -e "Generated from [notebooks/${file}.ipynb](https://github.com/kipoi/kipoi-veff/blob/master/notebooks/${file}.ipynb)\n$(cat ${file_out})" > ${file_out}
 
@@ -36,7 +36,13 @@ for file in $(cat ipynb_pages.txt); do
 	mv -f ${dir_out} theme_dir/img/ipynb/
 
 	# fix the path in the .md file
-	sed_replace '![png]('${file}'_files' '![png](/img/ipynb/'${file}'_files' $file_out
-	sed_replace '![svg]('${file}'_files' '![svg](/img/ipynb/'${file}'_files' $file_out
+	sed_replace '![png]('${file}'_files' '![png](/veff-docs/img/ipynb/'${file}'_files' $file_out
+	sed_replace '![svg]('${file}'_files' '![svg](/veff-docs/img/ipynb/'${file}'_files' $file_out
     fi
 done
+
+if [ -d "theme_dir/veff-docs" ]; then
+    rm -r theme_dir/veff-docs
+fi
+mkdir -p theme_dir/veff-docs
+ln -sr theme_dir/img theme_dir/veff-docs/img
