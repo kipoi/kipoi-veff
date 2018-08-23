@@ -11,6 +11,11 @@ variables:
       command: |
         conda install --yes -c conda-forge git-lfs
         cp .circleci/gitconfig ~/.gitconfig
+  update_pytorch: &update_pytorch
+    run:
+      name: Update pytorch
+      command: |
+        conda install --yes pytorch-cpu -c pytorch
   install_pip_deps: &install_pip_deps
     run:
       name: Install pip dependencies
@@ -67,6 +72,7 @@ jobs:
       - checkout
       - *update_conda
       - *install_git_lfs
+      - *update_pytorch
       - *install_pip_deps
       - *install_kipoi
       - *install_kipoi_veff
@@ -84,6 +90,7 @@ jobs:
       - checkout
       - *update_conda
       - *install_git_lfs
+      - *update_pytorch
       - *install_pip_deps
       - *install_kipoi
       - *install_kipoi_veff
