@@ -95,7 +95,7 @@ In order to perform a query on a model the query input must be transformed into 
 
 For cases when genomic regions can be defined freely for a model, the input samples will always have to generated matching the model input sequence length. This means that for query variants a region of the length of the model input will be centered on the query variant position. For query regions (e.g.: bed input file) every region is overlapped with windows of length of the model input. The first of those regions will start at the same position as the selected query region. Regions of the length of the model input sequence length will then be generated consecutively in order to cover the full region defined by the respective query region - see this schematic:
 
-<img alt='variant effect prediction sketch' src='../../img/overview/mutationmap_query_to_region_bed.png'>
+<img alt='variant effect prediction sketch' src='../img/overview/mutationmap_query_to_region_bed.png'>
 
 In the top bit of this schematic on can see the case in which the dataloader accepts a bed file as an input to generate
 model input data. This also requires the correct setup of the `dataloader.yaml` in `postprocessing > variant_effects > bed_input`
