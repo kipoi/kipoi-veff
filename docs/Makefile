@@ -8,13 +8,12 @@ help:
 	@echo "  push       push the repository to ouga"
 
 build:
-	python autogen.py
 	./render_ipynb.bash
-	mkdocs build
+	pydocmd build
 	@echo "Build finished"
 
 serve:
-	mkdocs serve
+	pydocmd serve
 
 clean:
 	rm -r site sources

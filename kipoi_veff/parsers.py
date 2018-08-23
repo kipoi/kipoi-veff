@@ -90,9 +90,10 @@ class KipoiVCFParser(object):
     # Arguments
         vcf_file: .vcf file path (can be also .vcf.gz, .bcf, .bcf.gz)
 
-    Iterator returns:
-      a nested dictionary with the schema:
-    ```
+    # Notes
+    Iterator returns a nested dictionary with the schema:
+
+    ```yaml
      - variant:
        - id
        - chr

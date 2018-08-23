@@ -505,8 +505,8 @@ def predict_snvs(model,
             if you want to use the `predict_snvs` to generate appropriate input DNA sequences for your model.
 
     # Returns
-        If `return_predictions=True`: Dictionary which contains a pandas DataFrame containing the calculated values
-            for each model output (target) column VCF SNV line. If return_predictions == False, returns None.
+        dict: containing a pandas DataFrame containing the calculated values
+            for each model output (target) column VCF SNV line. If `return_predictions == False`, returns None.
     """
     import cyvcf2
     model_info_extractor = ModelInfoExtractor(model_obj=model, dataloader_obj=dataloader)
@@ -688,7 +688,7 @@ def score_variants(model,
                    num_workers=0,
                    batch_size=32,
                    source='kipoi',
-                   seq_length=None,
+                   Seq_length=None,
                    std_var_id=False,
                    restriction_bed=None,
                    return_predictions=False,
@@ -713,7 +713,7 @@ def score_variants(model,
         model_outputs: If set then either a boolean filter or a named filter for model outputs that are reported.
 
     # Returns
-        If `return_predictions=True`: Dictionary which contains a pandas DataFrame containing the calculated values
+        dict: containing a pandas DataFrame containing the calculated values
             for each model output (target) column VCF SNV line. If `return_predictions == False`, returns None.
     """
     # TODO - call this function in kipoi_veff.cli.cli_score_variants
