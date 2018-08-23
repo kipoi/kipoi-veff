@@ -1,8 +1,12 @@
 # kipoi_veff
 > Variant effect prediction plugin for Kipoi.
 
-[![CircleCI](https://circleci.com/gh/kipoi/kipoi-veff.svg?style=svg)](https://circleci.com/gh/kipoi/kipoi-veff)
-[![Coverage Status](https://coveralls.io/repos/github/kipoi/kipoi-veff/badge.svg?branch=master)](https://coveralls.io/github/kipoi/kipoi-veff?branch=master)
+<a href='https://circleci.com/gh/kipoi/kipoi-veff'>
+	<img alt='CircleCI' src='https://circleci.com/gh/kipoi/kipoi-veff.svg?style=svg' style="max-height:20px;width:auto">
+</a>
+<a href=https://coveralls.io/github/kipoi/kipoi-veff?branch=master>
+	<img alt='Coverage status' src=https://coveralls.io/repos/github/kipoi/kipoi-veff/badge.svg?branch=master style="max-height:20px;width:auto;">
+</a>
 
 
 The variant effect prediction plug-in bring VCF annotation for DNA-sequence based models to models that are integrated into [Kipoi](https://kipoi.org). Additionally it offers visualisation tools to estimate the effect of possible genetic variants in a given area (mutation maps).
