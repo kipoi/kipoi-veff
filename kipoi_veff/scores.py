@@ -123,7 +123,7 @@ class Alt(RCScore):
 
 
 class Ref(RCScore):
-    """Alt. allele prediction
+    """Ref. allele prediction
     """
 
     def __call__(self, ref, alt, ref_rc=None, alt_rc=None):
