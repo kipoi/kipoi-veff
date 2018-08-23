@@ -61,6 +61,8 @@ class RCScore(Score):
 
 
 class Logit(RCScore):
+    """Compute the difference on the logit scale: `logit_diff = log(p_alt / (1 - p_alt )) - log(p_ref / (1 - p_ref ))`
+    """
 
     def __call__(self, ref, alt, ref_rc=None, alt_rc=None):
         preds = {"ref": ref, "ref_rc": ref_rc, "alt": alt, "alt_rc": alt_rc}
@@ -76,6 +78,8 @@ class Logit(RCScore):
 
 
 class LogitAlt(RCScore):
+    """Alt. allele prediction on the logit scale: `np.log(p_alt / (1 - p_alt ))`
+    """
 
     def __call__(self, ref, alt, ref_rc=None, alt_rc=None):
         preds = {"ref": ref, "ref_rc": ref_rc, "alt": alt, "alt_rc": alt_rc}
@@ -91,6 +95,8 @@ class LogitAlt(RCScore):
 
 
 class LogitRef(RCScore):
+    """Ref. allele prediction on the logit scale: `np.log(p_alt / (1 - p_alt ))`
+    """
 
     def __call__(self, ref, alt, ref_rc=None, alt_rc=None):
         preds = {"ref": ref, "ref_rc": ref_rc, "alt": alt, "alt_rc": alt_rc}
@@ -106,6 +112,8 @@ class LogitRef(RCScore):
 
 
 class Alt(RCScore):
+    """Alt. allele prediction
+    """
 
     def __call__(self, ref, alt, ref_rc=None, alt_rc=None):
         alt_out = alt
@@ -115,6 +123,8 @@ class Alt(RCScore):
 
 
 class Ref(RCScore):
+    """Alt. allele prediction
+    """
 
     def __call__(self, ref, alt, ref_rc=None, alt_rc=None):
         ref_out = ref
@@ -124,6 +134,8 @@ class Ref(RCScore):
 
 
 class Diff(RCScore):
+    """Prediction difference: `diff = p_alt - p_ref`
+    """
 
     def __call__(self, ref, alt, ref_rc=None, alt_rc=None):
         preds = {"ref": ref, "ref_rc": ref_rc, "alt": alt, "alt_rc": alt_rc}
@@ -137,6 +149,8 @@ class Diff(RCScore):
 
 
 class DeepSEA_effect(RCScore):
+    """Score used by DeepSEA: `abs(logit_diff) * abs(diff)`
+    """
 
     def __call__(self, ref, alt, ref_rc=None, alt_rc=None):
         preds = {"ref": ref, "ref_rc": ref_rc, "alt": alt, "alt_rc": alt_rc}

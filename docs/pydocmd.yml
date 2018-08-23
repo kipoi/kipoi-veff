@@ -1,0 +1,88 @@
+site_name: Kipoi-veff
+
+# ------- readthedocs ---------
+theme:
+ name: readthedocs
+ custom_dir: theme_dir
+extra_css: [css/extra.css]
+# --------------------------
+repo_url: http://github.com/kipoi/kipoi-veff
+site_url: http://kipoi.org/docs/veff/
+edit_uri: edit/master/docs/templates/
+site_description: 'Documentation of Kipoi-veff, variant effect prediction plugin for Kipoi.'
+
+dev_addr: '0.0.0.0:8000'
+
+google_analytics: ["UA-115025493-1", "kipoi.org"]
+# --------------------------------------------
+
+# This tells pydocmd which pages to generate from which Python modules,
+# functions and classes. At the first level is the page name, below that
+# is a tree of Python member names (modules, classes, etc.) that should be
+# documented. Higher indentation leads to smaller header size.
+generate:
+  - api/score_variants.md:
+    - kipoi_veff.score_variants
+  - api/predict_snvs.md:
+    - kipoi_veff.predict_snvs
+  - api/scores.md:
+    - kipoi_veff.scores:
+      - kipoi_veff.scores.Ref
+      - kipoi_veff.scores.Alt
+      - kipoi_veff.scores.Diff
+      - kipoi_veff.scores.LogitRef
+      - kipoi_veff.scores.LogitAlt
+      - kipoi_veff.scores.Logit
+      - kipoi_veff.scores.DeepSEA_effect
+  - api/MutationMap.md:
+    - kipoi_veff.MutationMap+
+  - api/MutationMapPlotter.md:
+    - kipoi_veff.MutationMapPlotter+
+  - api/KipoiVCFParser.md:
+    - kipoi_veff.parsers.KipoiVCFParser+
+
+# - baz/cool-stuff.md:
+#   - foobar.baz:
+#     - foobar.baz.CoolClass+     # (+ to include members)
+#     - foobar.baz.some_function
+# - baz/more-stuff.md:
+#   - foobar.more++               # (++ to include members, and their members)
+
+# MkDocs pages configuration. The `<<` operator is sugar added by pydocmd
+# that allows you to use an external Markdown file (eg. your project's README)
+# in the documentation. The path must be relative to current working directory.
+# pages:
+# - Home: index.md << ../README.md
+# - foobar.baz:
+#   - Cool Stuff: baz/cool-stuff.md
+
+pages:
+- Home: index.md << ../README.md
+- Overview: overview.md
+- Using: using.md
+- Tutorials: # compiled from ipynb. Listed in ipynb_pages.txt
+  - Simple: tutorials/variant_effect_prediction_simple.md
+  - Advanced: tutorials/variant_effect_prediction.md
+  - Mutation map: tutorials/mutation_map.md
+- Api:  # compiled by pydoc
+  - score_variants: api/score_variants.md
+  - predict_snvs: api/predict_snvs.md
+  - Available scores: api/scores.md
+  - MutationMap: api/MutationMap.md
+  - MutationMapPlotter: api/MutationMapPlotter.md
+  - KipoiVCFParser: api/KipoiVCFParser.md
+
+    
+# These options all show off their default values. You don't have to add
+# them to your configuration if you're fine with the default.
+docs_dir: templates
+gens_dir: sources
+site_dir: site
+loader:   pydocmd.loader.PythonLoader
+preprocessor: pydocmd.preprocessor.Preprocessor
+
+# Additional search path for your Python module. If you use Pydocmd from a
+# subdirectory of your project (eg. docs/), you may want to add the parent
+# directory here.
+additional_search_paths:
+- ..

@@ -85,30 +85,33 @@ def soft_to_float(x):
 
 
 class KipoiVCFParser(object):
+    """Iteratively parse a vcf file into a dictionary
+
+    # Arguments
+        vcf_file: .vcf file path (can be also .vcf.gz, .bcf, .bcf.gz)
+
+    # Notes
+    Iterator returns a nested dictionary with the schema:
+
+    ```yaml
+     - variant:
+       - id
+       - chr
+       - pos
+       - ref
+       - alt
+     - other:
+       - f1
+       - f2
+     - kipoi:
+       - model:
+         - type:
+           - feature1...
+           - feature2...
+    ```
+    """
 
     def __init__(self, vcf_file):
-        """Iteratively a vcf file into a dictionary
-
-        Args:
-          vcf_file: .vcf file path (can be also .vcf.gz, .bcf, .bcf.gz)
-
-        Iterator returns:
-          a nested dictionary with the schema:
-             - variant:
-               - id
-               - chr
-               - pos
-               - ref
-               - alt
-             - other:
-               - f1
-               - f2
-             - kipoi:
-               - model:
-                 - type:
-                   - feature1...
-                   - feature2...
-        """
         from cyvcf2 import VCF
         self.vcf_file = vcf_file
         self.vcf = VCF(vcf_file)
