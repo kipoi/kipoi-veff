@@ -4,15 +4,22 @@
 [![CircleCI](https://circleci.com/gh/kipoi/kipoi-veff.svg?style=svg)](https://circleci.com/gh/kipoi/kipoi-veff)
 [![Coverage Status](https://coveralls.io/repos/github/kipoi/kipoi-veff/badge.svg?branch=master)](https://coveralls.io/github/kipoi/kipoi-veff?branch=master)
 
+
+The variant effect prediction plug-in bring VCF annotation for DNA-sequence based models to models that are integrated into [Kipoi](https://kipoi.org). Additionally it offers visualisation tools to estimate the effect of possible genetic variants in a given area (mutation maps).
+
 ## Installation
+
+To install the variant effect prediction plug-in use the following command:
 
 ```sh
 pip install kipoi_veff
 ```
 
+In order to use the variant effect prediction plug-in with Kipoi the `--vep` argument has to be added when setting up the model environment with `kipoi create env <model_name> --vep`.
+
 ## Usage example
 
-Main function of this package is `score_variants` accessible from the command line or python. It annotates the vcf file using model predictions for the refernece and alternative alleles.
+Main function of this package is `score_variants` accessible from the command line or python. It annotates the vcf file using model predictions for the reference and alternative alleles.
 
 ### CLI
 ```bash
@@ -120,7 +127,7 @@ score_variants(model,
                model_outputs = None)
 ```
 
-Args:
+Method arguments:
 - model: model string or a model class instance
 - dl_args: dataloader arguments as a dictionary
 - input_vcf: input vcf file path
@@ -139,6 +146,8 @@ Args:
 
 
 ## Development setup
+
+If you want to help develop the Kipoi variant effect prediction plug-in, you are more than welcome to join. You should then install and test kipoi-veff as follows: 
 
 ```sh
 git clone https://github.com/kipoi/kipoi-veff.git

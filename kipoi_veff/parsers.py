@@ -85,7 +85,8 @@ def soft_to_float(x):
 
 
 class KipoiVCFParser(object):
-    """Iteratively parse a vcf file into a dictionary
+    """Iteratively parse a vcf file into a dictionary. This class was designed to work well with VCFs annotated by
+    `kipoi-veff`. It performs automated shortening of column names.
 
     # Arguments
         vcf_file: .vcf file path (can be also .vcf.gz, .bcf, .bcf.gz)

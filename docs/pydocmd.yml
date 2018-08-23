@@ -59,7 +59,10 @@ generate:
 pages:
 - Home: index.md << ../README.md
 - Overview: overview.md
-- Using: using.md
+- Using:
+  - Functions: using.md
+  - Variant effect prediction: variant_effect_pred.md
+  - Mutation maps: mutation_map.md
 - Tutorials: # compiled from ipynb. Listed in ipynb_pages.txt
   - Simple: tutorials/variant_effect_prediction_simple.md
   - Advanced: tutorials/variant_effect_prediction.md

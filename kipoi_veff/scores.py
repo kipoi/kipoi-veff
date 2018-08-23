@@ -61,7 +61,15 @@ class RCScore(Score):
 
 
 class Logit(RCScore):
-    """Compute the difference on the logit scale: `logit_diff = log(p_alt / (1 - p_alt )) - log(p_ref / (1 - p_ref ))`
+    """Returns the difference between predictions for the reference and alternative sequences on 
+    the logit scale: `logit_diff = log(p_alt / (1 - p_alt )) - log(p_ref / (1 - p_ref ))`
+    
+    If the predictions were executed taking
+    the reverse-complement of the sequence into account then the returned value is averaged by
+    the function defined in `rc_merging`. Allowed values for `rc_merging` are: "min", "max", "mean", "median",
+    "absmax" or any callable that accepts/expects two arguments:  `my_func(fwd_pred, rc_pred)`.
+    
+    Reverse-complement-averaging, where applicable, is performed after score calculation.
     """
 
     def __call__(self, ref, alt, ref_rc=None, alt_rc=None):
@@ -78,7 +86,15 @@ class Logit(RCScore):
 
 
 class LogitAlt(RCScore):
-    """Alt. allele prediction on the logit scale: `np.log(p_alt / (1 - p_alt ))`
+    """Returns the predictions for the alternative allele on the logit scale: `np.log(p_alt / (1 - p_alt ))`
+    
+    If the predictions were executed taking
+    the reverse-complement of the sequence into account then the returned value is averaged by
+    the function defined in `rc_merging`. Allowed values for `rc_merging` are: "min", "max", "mean", "median",
+    "absmax" or any callable that accepts/expects two arguments:  `my_func(fwd_pred, rc_pred)`.
+    
+    Reverse-complement-averaging, where applicable, is performed after score calculation.
+    
     """
 
     def __call__(self, ref, alt, ref_rc=None, alt_rc=None):
@@ -95,7 +111,14 @@ class LogitAlt(RCScore):
 
 
 class LogitRef(RCScore):
-    """Ref. allele prediction on the logit scale: `np.log(p_alt / (1 - p_alt ))`
+    """Returns the predictions for the reference allele on the logit scale: `np.log(p_alt / (1 - p_alt ))`.
+    
+    If the predictions were executed taking
+    the reverse-complement of the sequence into account then the returned value is averaged by
+    the function defined in `rc_merging`. Allowed values for `rc_merging` are: "min", "max", "mean", "median",
+    "absmax" or any callable that accepts/expects two arguments:  `my_func(fwd_pred, rc_pred)`.
+    
+    Reverse-complement-averaging, where applicable, is performed after score calculation.
     """
 
     def __call__(self, ref, alt, ref_rc=None, alt_rc=None):
@@ -112,7 +135,14 @@ class LogitRef(RCScore):
 
 
 class Alt(RCScore):
-    """Alt. allele prediction
+    """Returns the predictions for the alternative allele.
+    
+    If the predictions were executed taking
+    the reverse-complement of the sequence into account then the returned value is averaged by
+    the function defined in `rc_merging`. Allowed values for `rc_merging` are: "min", "max", "mean", "median",
+    "absmax" or any callable that accepts/expects two arguments:  `my_func(fwd_pred, rc_pred)`.
+    
+    Reverse-complement-averaging, where applicable, is performed after score calculation.
     """
 
     def __call__(self, ref, alt, ref_rc=None, alt_rc=None):
@@ -123,7 +153,14 @@ class Alt(RCScore):
 
 
 class Ref(RCScore):
-    """Alt. allele prediction
+    """Returns the predictions for the reference allele.
+    
+    If the predictions were executed taking
+    the reverse-complement of the sequence into account then the returned value is averaged by
+    the function defined in `rc_merging`. Allowed values for `rc_merging` are: "min", "max", "mean", "median",
+    "absmax" or any callable that accepts/expects two arguments:  `my_func(fwd_pred, rc_pred)`.
+    
+    Reverse-complement-averaging, where applicable, is performed after score calculation.
     """
 
     def __call__(self, ref, alt, ref_rc=None, alt_rc=None):
@@ -134,7 +171,15 @@ class Ref(RCScore):
 
 
 class Diff(RCScore):
-    """Prediction difference: `diff = p_alt - p_ref`
+    """Returns the difference between predictions for the reference and alternative
+    sequences prediction difference: `diff = p_alt - p_ref`
+    
+    If the predictions were executed taking
+    the reverse-complement of the sequence into account then the returned value is averaged by
+    the function defined in `rc_merging`. Allowed values for `rc_merging` are: "min", "max", "mean", "median",
+    "absmax" or any callable that accepts/expects two arguments:  `my_func(fwd_pred, rc_pred)`.
+    
+    Reverse-complement-averaging, where applicable, is performed after score calculation.
     """
 
     def __call__(self, ref, alt, ref_rc=None, alt_rc=None):
@@ -149,7 +194,14 @@ class Diff(RCScore):
 
 
 class DeepSEA_effect(RCScore):
-    """Score used by DeepSEA: `abs(logit_diff) * abs(diff)`
+    """Returns the score used by DeepSEA in order to calculate the e-value: `abs(logit_diff) * abs(diff)`
+    
+    If the predictions were executed taking
+    the reverse-complement of the sequence into account then the returned value is averaged by
+    the function defined in `rc_merging`. Allowed values for `rc_merging` are: "min", "max", "mean", "median",
+    "absmax" or any callable that accepts/expects two arguments:  `my_func(fwd_pred, rc_pred)`.
+    
+    Reverse-complement-averaging, where applicable, is performed after score calculation.
     """
 
     def __call__(self, ref, alt, ref_rc=None, alt_rc=None):
