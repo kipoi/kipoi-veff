@@ -40,9 +40,9 @@ BUILD_DOCS_FROM_BRANCH="master"
 #
 # ----------------------------------------------------------------------------
 
-if [[ $CIRCLE_PROJECT_USERNAME != kipoi-veff ]]; then
-    # exit if not in kipoi repo
-    exit 0
+if [[ $CIRCLE_PROJECT_USERNAME != kipoi ]]; then
+    echo "$CIRCLE_PROJECT_USERNAME != kipoi"
+    exit 1
 fi
 
 REPO="git@github.com:${GITHUB_USERNAME}/${ORIGIN}.git"
