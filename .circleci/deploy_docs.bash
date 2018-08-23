@@ -18,7 +18,7 @@ set -eou pipefail
 BRANCH="master"
 ORIGIN="kipoi.github.io"
 GITHUB_USERNAME="kipoi"
-TARGET_FOLDER="docs/veff"
+TARGET_FOLDER="veff-docs/"
 
 # DOCSOURCE is directory containing the Makefile, relative to the directory
 # containing this bash script.
