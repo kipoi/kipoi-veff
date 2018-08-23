@@ -5,7 +5,7 @@ Variant effect prediction offers a simple way predict effects of SNVs using any 
 ## How it works
 This sketch highlights the overall functionality of variant effect prediction. More details are given in the chapters below.
 
-<img alt='variant effect prediction sketch' src='../../img/overview/vep.png'>
+<img alt='variant effect prediction sketch' src='../img/overview/vep.png'>
 
 Dataloader output and a VCF are overlapped and the input DNA sequence is mutated as defined in the VCF. The reference and the alternative set of model inputs is predicted using the model and the differences are evaluated using a scoring function. The results are then stored in an annotated VCF.
 
@@ -95,7 +95,7 @@ Here the `associated_metadata` flag in the input field `seq` is set to `ranges`,
 
 The following sketch gives an overview how the different tags play together and how they are used with variant effect prediction.
 
-<img alt='variant effect prediction sketch with dataloader details' src='../../img/overview/variant_effect_prediction_intro.png'>
+<img alt='variant effect prediction sketch with dataloader details' src='../img/overview/variant_effect_prediction_intro.png'>
 
 
 ## Use-cases
@@ -123,20 +123,20 @@ postprocessing:
 
 This section indicates that the dataloader function has an argument `intervals_file` which accepts a bed file path as input which may be used.
 
-<img alt='variant effect prediction sketch' src='../../img/overview/vep_centered.png'>
+<img alt='variant effect prediction sketch' src='../img/overview/vep_centered.png'>
 
 
 ### Restricted-variant centered effect prediction
 Requirements for the dataloader and dataloader.yaml here are identical to the variant centered effect prediction. The only difference is that this function is designed for models that can't predict on arbitrary regions of the genome, but only in certain regions of the genome. If those regions can be defined in a bed file (further on called 'restriction-bed' file) then this approach can be used. Variant effect prediction will then intersect the VCF with the restriction-bed and generate another bed file that is then passed on to the dataloader.
 
 Regions in the restriction-bed file may be larger than the input sequence lenght, in that case the generated seuqence will be centered on the variant position as much as possible - restricted by what is defined in the restrictions-bed file.
-<img alt='variant effect prediction sketch' src='../../img/overview/vep_restr_bed.png'>
+<img alt='variant effect prediction sketch' src='../img/overview/vep_restr_bed.png'>
 
 ### Overlap-based effect prediction
 If the dataloader does not support bed input files then variant effect predictions can be run by the overlap of a VCF with the regions defined in the metdata output of the dataloader.
 
 If multiple variants overlap with a region then the effect will be predicted inpendently for those variants. If multiple (e.g.: two) model input samples overlap with one variant then the output will contain as many predictions as there were independent overlaps of metadata ranges and variants (e.g.: two).
-<img alt='variant effect prediction sketch' src='../../img/overview/vep.png'>
+<img alt='variant effect prediction sketch' src='../img/overview/vep.png'>
 
 
 ## Scoring functions
@@ -214,7 +214,7 @@ If variant effect prediction is run programmatically in python then the results 
 ## More complex models
 More complex models may have more than only one DNA sequence input, it may even be that models have DNA sequence inputs taken from different regions of the genome within one sample in a batch. See this sketch for an illustration of the scenario:
 
-<img alt='variant effect prediction sketch' src='../../img/overview/variant_effect_prediction_intro_complex.png'>
+<img alt='variant effect prediction sketch' src='../img/overview/variant_effect_prediction_intro_complex.png'>
 
 
 The dataloader has three sequence outputs which are linked to two metadata ranges. for both ranges objects the beginning of the ranges is displayed. In order to overlap the metadata ranges with variants the input batch is processed one sample at a time. The samples in a batch are displayed in green rectangular boxes: For every sample all the ranges are assembled and overlapped with variants in the VCF. Then the effect is predicted for every single variant in the VCF that overlaps at least one of the region defined in that sample. This means that for the first sample in the batch two variants are investigated: rs1 and rs2. rs1 can only affect seq1a and seq1b, hence those two sequences are mutated, seq2 is not. rs2 overlaps with both ranges in the first sample and hence two sequences are mutated with rs2 to predict its effect. This means that the first sample will be evaluated twice using variants rs1 and rs2, and the second sample only once using rs3.
