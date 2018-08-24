@@ -66,10 +66,10 @@ cp -r ${DOCHTML} $STAGING/${TARGET_FOLDER}
 cd $STAGING
 
 # committing with no changes results in exit 1, so check for that case first.
-if git diff --quiet; then
-    echo "No changes to push -- exiting cleanly"
-    exit 0
-fi
+# if git diff --quiet; then
+#    echo "No changes to push -- exiting cleanly"
+#     exit 0
+# fi
 
 # Ignore branch
 # if [[ $CIRCLE_BRANCH != master ]]; then
