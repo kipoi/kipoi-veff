@@ -3,6 +3,7 @@ import itertools
 import logging
 import os
 import tempfile
+import gzip
 
 import numpy as np
 import pandas as pd
@@ -238,7 +239,7 @@ def get_variants_in_regions_search_vcf(dl_batch, seq_to_meta, vcf_fh):
     return vcf_records, process_lines, process_seq_fields
 
 
-def get_variants_in_regions_sequential_vcf(dl_batch, seq_to_meta, vcf_fh, vcf_id_generator_fn):
+def get_variants_in_regions_sequential_vcf(dl_batch, seq_to_meta, vcf_fh, vcf_id_generator_fn, bed_id_conv_fh = None):
     vcf_records = []  # list of vcf records to use
     process_ids = []  # id from genomic ranges metadata
     process_lines = []  # sample id within batch
@@ -259,6 +260,12 @@ def get_variants_in_regions_sequential_vcf(dl_batch, seq_to_meta, vcf_fh, vcf_id
 
     # Now continue going sequentially through the vcf assigning vcf record with regions to test.
     for i, returned_id in enumerate(ranges["id"]):
+        if bed_id_conv_fh is not None:
+            for l in bed_id_conv_fh:
+                tks = l.decode().rstrip().split("\t")
+                if tks[1] == returned_id:
+                    returned_id = tks[0]
+                    break
         for record in vcf_fh:
             id = vcf_id_generator_fn(record)
             if str(id) == str(returned_id):
@@ -337,7 +344,7 @@ class SampleCounter():
 
 
 def _generate_seq_sets(dl_ouput_schema, dl_batch, vcf_fh, vcf_id_generator_fn, seq_to_mut, seq_to_meta,
-                       sample_counter, vcf_search_regions=False, generate_rc=True):
+                       sample_counter, vcf_search_regions=False, generate_rc=True, bed_id_conv_fh = None):
     """
         Perform in-silico mutagenesis on what the dataloader has returned.
 
@@ -383,7 +390,8 @@ def _generate_seq_sets(dl_ouput_schema, dl_batch, vcf_fh, vcf_id_generator_fn, s
         vcf_records, process_lines, process_seq_fields, process_ids = get_variants_in_regions_sequential_vcf(dl_batch,
                                                                                                              seq_to_meta,
                                                                                                              vcf_fh,
-                                                                                                             vcf_id_generator_fn)
+                                                                                                             vcf_id_generator_fn,
+                                                                                                             bed_id_conv_fh)
 
     # short-cut if no sequences are left
     if len(process_lines) == 0:
@@ -523,6 +531,7 @@ def predict_snvs(model,
 
     exec_files_bed_keys = model_info_extractor.get_exec_files_bed_keys()
     temp_bed3_file = None
+    bed3_to_vcf_idx = None
 
     vcf_search_regions = True
 
@@ -532,16 +541,21 @@ def predict_snvs(model,
             vcf_search_regions = False
 
             temp_bed3_file = tempfile.mktemp()  # file path of the temp file
+            bed3_to_vcf_idx = tempfile.mktemp()
 
             vcf_fh = cyvcf2.VCF(vcf_fpath, "r")
 
-            with BedWriter(temp_bed3_file) as ofh:
-                for record in vcf_fh:
-                    if not is_indel_wrapper(record):
-                        region = vcf_to_region(record)
-                        id = vcf_id_generator_fn(record)
-                        for chrom, start, end in zip(region["chrom"], region["start"], region["end"]):
-                            ofh.append_interval(chrom=chrom, start=start, end=end, id=id)
+            bed_line_ctr = 0
+            with gzip.open(bed3_to_vcf_idx, "wb") as idx_conv_fh:
+                with BedWriter(temp_bed3_file) as ofh:
+                    for record in vcf_fh:
+                        if not is_indel_wrapper(record):
+                            region = vcf_to_region(record)
+                            id = vcf_id_generator_fn(record)
+                            for chrom, start, end in zip(region["chrom"], region["start"], region["end"]):
+                                ofh.append_interval(chrom=chrom, start=start, end=end, id=bed_line_ctr)
+                                idx_conv_fh.write(("%s\t%d\n"%(id, bed_line_ctr)).encode())
+                                bed_line_ctr +=1
 
             vcf_fh.close()
     else:
@@ -586,6 +600,10 @@ def predict_snvs(model,
     # Open vcf again
     vcf_fh = cyvcf2.VCF(vcf_fpath, "r")
 
+    bed_id_conv_fh = None
+    if bed3_to_vcf_idx is not None:
+        bed_id_conv_fh = gzip.open(bed3_to_vcf_idx, "rb")
+
     # pre-process regions
     keys = set()  # what is that?
 
@@ -609,7 +627,8 @@ def predict_snvs(model,
         eval_kwargs = _generate_seq_sets(dataloader.output_schema, batch, vcf_fh, vcf_id_generator_fn,
                                          seq_to_mut=seq_to_mut, seq_to_meta=seq_to_meta,
                                          sample_counter=sample_counter, vcf_search_regions=vcf_search_regions,
-                                         generate_rc=model_info_extractor.use_seq_only_rc)
+                                         generate_rc=model_info_extractor.use_seq_only_rc,
+                                         bed_id_conv_fh = bed_id_conv_fh)
         if eval_kwargs is None:
             # No generated datapoint overlapped any VCF region
             continue
@@ -639,6 +658,9 @@ def predict_snvs(model,
             res.append(res_here)
 
     vcf_fh.close()
+
+    if bed_id_conv_fh is not None:
+        bed_id_conv_fh.close()
 
     # open the writers if possible:
     if sync_pred_writer is not None:
