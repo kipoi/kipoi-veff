@@ -209,7 +209,7 @@ def get_overlapping_bed_regions(dl_batch, seq_to_meta, bedtools_obj):
 def _generate_seq_sets_mutmap_iter(dl_ouput_schema, dl_batch, seq_to_mut, seq_to_meta,
                                    sample_counter, ref_sequences, bedtools_obj=None, vcf_fh=None,
                                    vcf_id_generator_fn=None, vcf_search_regions=False, generate_rc=True,
-                                   batch_size=32, bed_id_conv_fh = None):
+                                   batch_size=32, bed_id_conv_fh=None):
     all_meta_fields = list(set(seq_to_meta.values()))
 
     num_samples_in_batch = len(dl_batch['metadata'][all_meta_fields[0]]["chr"])
@@ -388,7 +388,6 @@ def get_ref_seq_from_seq_set(input_set, seq_to_meta, seq_to_str_converter, dl_ou
 
 
 class MutationMapDataMerger(object):
-
     def __init__(self, seq_to_meta):
         self.predictions = []
         self.pred_sets = []
@@ -429,7 +428,7 @@ class MutationMapDataMerger(object):
                     metadata_subset = get_genomicranges_line(batch_metadata[metadata_key], process_line)
                     subset_keys = ["chr", "start", "end", "strand"]
                     if not (isinstance(metadata_subset["strand"], list) or
-                            isinstance(metadata_subset["strand"], np.ndarray)):
+                                isinstance(metadata_subset["strand"], np.ndarray)):
                         subset_keys = ["chr", "start", "end"]
                     metadata_subset_dict = {k: metadata_subset[k][0] for k in subset_keys}
                     if "strand" not in metadata_subset_dict:
@@ -820,10 +819,10 @@ class MutationMap(object):
             raise Exception("If `vcf_fpath` is set then also `vcf_id_generator_fn` has to be defined!")
 
         dataloader_args, temp_bed3_file, vcf_search_regions, bed3_to_vcf_idx = self._setup_dataloader_kwargs(vcf_fpath,
-                                                                                            bed_fpath,
-                                                                                            vcf_to_region,
-                                                                                            bed_to_region,
-                                                                                            vcf_id_generator_fn)
+                                                                                                             bed_fpath,
+                                                                                                             vcf_to_region,
+                                                                                                             bed_to_region,
+                                                                                                             vcf_id_generator_fn)
 
         model_out_annotation = self.model_info_extractor.get_model_out_annotation()
 
@@ -872,7 +871,7 @@ class MutationMap(object):
                                                               vcf_search_regions=vcf_search_regions,
                                                               generate_rc=self.model_info_extractor.use_seq_only_rc,
                                                               batch_size=batch_size,
-                                                              bed_id_conv_fh = bed_id_conv_fh)
+                                                              bed_id_conv_fh=bed_id_conv_fh)
 
             dl_batch_res = []
             # Keep the following metadata entries from the from the lines

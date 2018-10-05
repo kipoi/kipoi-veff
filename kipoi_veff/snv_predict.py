@@ -239,7 +239,7 @@ def get_variants_in_regions_search_vcf(dl_batch, seq_to_meta, vcf_fh):
     return vcf_records, process_lines, process_seq_fields
 
 
-def get_variants_in_regions_sequential_vcf(dl_batch, seq_to_meta, vcf_fh, vcf_id_generator_fn, bed_id_conv_fh = None):
+def get_variants_in_regions_sequential_vcf(dl_batch, seq_to_meta, vcf_fh, vcf_id_generator_fn, bed_id_conv_fh=None):
     vcf_records = []  # list of vcf records to use
     process_ids = []  # id from genomic ranges metadata
     process_lines = []  # sample id within batch
@@ -286,7 +286,7 @@ def get_variants_df(seq_key, ranges_input_obj, vcf_records, process_lines, proce
                     "do_mutate": []}
 
     if ("strand" in ranges_input_obj) and (isinstance(ranges_input_obj["strand"], list) or
-                                           isinstance(ranges_input_obj["strand"], np.ndarray)):
+                                               isinstance(ranges_input_obj["strand"], np.ndarray)):
         preproc_conv["strand"] = []
 
     for i, record in enumerate(vcf_records):
@@ -302,7 +302,7 @@ def get_variants_df(seq_key, ranges_input_obj, vcf_records, process_lines, proce
             pre_new_vals["end"] = ranges_input_obj["end"][ranges_input_i]
             pre_new_vals["varpos_rel"] = int(record.POS) - pre_new_vals["start"]
             if not ((pre_new_vals["varpos_rel"] < 0) or
-                    (pre_new_vals["varpos_rel"] > (pre_new_vals["end"] - pre_new_vals["start"] + 1))):
+                        (pre_new_vals["varpos_rel"] > (pre_new_vals["end"] - pre_new_vals["start"] + 1))):
 
                 # If variant lies in the region then continue
                 pre_new_vals["do_mutate"] = True
@@ -333,7 +333,6 @@ def get_variants_df(seq_key, ranges_input_obj, vcf_records, process_lines, proce
 
 
 class SampleCounter():
-
     def __init__(self):
         self.sample_it_counter = 0
 
@@ -344,7 +343,7 @@ class SampleCounter():
 
 
 def _generate_seq_sets(dl_ouput_schema, dl_batch, vcf_fh, vcf_id_generator_fn, seq_to_mut, seq_to_meta,
-                       sample_counter, vcf_search_regions=False, generate_rc=True, bed_id_conv_fh = None):
+                       sample_counter, vcf_search_regions=False, generate_rc=True, bed_id_conv_fh=None):
     """
         Perform in-silico mutagenesis on what the dataloader has returned.
 
@@ -363,6 +362,7 @@ def _generate_seq_sets(dl_ouput_schema, dl_batch, vcf_fh, vcf_id_generator_fn, s
         `vcf_search_regions`: if `False` assume that the regions are labelled and only test variants/region combinations for
         which the label fits. If `True` find all variants overlapping with all regions and test all.
         `generate_rc`: generate also reverse complement sequences. Only makes sense if supported by model.
+        `bed_id_conv_fh`: fil handle that converts the bed file row index to a VCF variant index
         """
 
     all_meta_fields = list(set(seq_to_meta.values()))
@@ -554,8 +554,8 @@ def predict_snvs(model,
                             id = vcf_id_generator_fn(record)
                             for chrom, start, end in zip(region["chrom"], region["start"], region["end"]):
                                 ofh.append_interval(chrom=chrom, start=start, end=end, id=bed_line_ctr)
-                                idx_conv_fh.write(("%s\t%d\n"%(id, bed_line_ctr)).encode())
-                                bed_line_ctr +=1
+                                idx_conv_fh.write(("%s\t%d\n" % (id, bed_line_ctr)).encode())
+                                bed_line_ctr += 1
 
             vcf_fh.close()
     else:
@@ -628,7 +628,7 @@ def predict_snvs(model,
                                          seq_to_mut=seq_to_mut, seq_to_meta=seq_to_meta,
                                          sample_counter=sample_counter, vcf_search_regions=vcf_search_regions,
                                          generate_rc=model_info_extractor.use_seq_only_rc,
-                                         bed_id_conv_fh = bed_id_conv_fh)
+                                         bed_id_conv_fh=bed_id_conv_fh)
         if eval_kwargs is None:
             # No generated datapoint overlapped any VCF region
             continue
