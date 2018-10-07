@@ -3,6 +3,7 @@ import itertools
 import logging
 import os
 import tempfile
+import gzip
 
 import numpy as np
 import pandas as pd
@@ -208,7 +209,7 @@ def get_overlapping_bed_regions(dl_batch, seq_to_meta, bedtools_obj):
 def _generate_seq_sets_mutmap_iter(dl_ouput_schema, dl_batch, seq_to_mut, seq_to_meta,
                                    sample_counter, ref_sequences, bedtools_obj=None, vcf_fh=None,
                                    vcf_id_generator_fn=None, vcf_search_regions=False, generate_rc=True,
-                                   batch_size=32):
+                                   batch_size=32, bed_id_conv_fh=None):
     all_meta_fields = list(set(seq_to_meta.values()))
 
     num_samples_in_batch = len(dl_batch['metadata'][all_meta_fields[0]]["chr"])
@@ -236,7 +237,8 @@ def _generate_seq_sets_mutmap_iter(dl_ouput_schema, dl_batch, seq_to_mut, seq_to
             # vcf_search_regions == False means: rely completely on the variant id
             # so for every sample assert that all metadata ranges ids agree and then find the entry.
             query_vcf_records, query_process_lines, query_process_seq_fields, query_process_ids = \
-                get_variants_in_regions_sequential_vcf(dl_batch, seq_to_meta, vcf_fh, vcf_id_generator_fn)
+                get_variants_in_regions_sequential_vcf(dl_batch, seq_to_meta, vcf_fh, vcf_id_generator_fn,
+                                                       bed_id_conv_fh)
     elif bedtools_obj is not None:
         query_bed_regions, query_process_lines, query_process_seq_fields = \
             get_overlapping_bed_regions(dl_batch, seq_to_meta, bedtools_obj)
@@ -386,7 +388,6 @@ def get_ref_seq_from_seq_set(input_set, seq_to_meta, seq_to_str_converter, dl_ou
 
 
 class MutationMapDataMerger(object):
-
     def __init__(self, seq_to_meta):
         self.predictions = []
         self.pred_sets = []
@@ -427,7 +428,7 @@ class MutationMapDataMerger(object):
                     metadata_subset = get_genomicranges_line(batch_metadata[metadata_key], process_line)
                     subset_keys = ["chr", "start", "end", "strand"]
                     if not (isinstance(metadata_subset["strand"], list) or
-                            isinstance(metadata_subset["strand"], np.ndarray)):
+                                isinstance(metadata_subset["strand"], np.ndarray)):
                         subset_keys = ["chr", "start", "end"]
                     metadata_subset_dict = {k: metadata_subset[k][0] for k in subset_keys}
                     if "strand" not in metadata_subset_dict:
@@ -707,6 +708,7 @@ class MutationMap(object):
         import copy
         # If then where do I have to put my bed file in the command?
         temp_bed3_file = None
+        bed3_to_vcf_idx = None
         vcf_search_regions = True
 
         dataloader_args = copy.deepcopy(self.dataloader_args)
@@ -720,17 +722,22 @@ class MutationMap(object):
         # then generate the bed file.
         if self.exec_files_bed_keys is not None:
             temp_bed3_file = tempfile.mktemp()  # file path of the temp file
+            bed3_to_vcf_idx = tempfile.mktemp()
             if (vcf_to_region is not None) and (vcf_fpath is not None):
                 logger.warn("Using VCF file %s to define the dataloader intervals." % vcf_fpath)
                 vcf_search_regions = False
                 vcf_fh = cyvcf2.VCF(vcf_fpath, "r")
-                with BedWriter(temp_bed3_file) as ofh:
-                    for record in vcf_fh:
-                        if not is_indel_wrapper(record):
-                            region = vcf_to_region(record)
-                            id = vcf_id_generator_fn(record)
-                            for chrom, start, end in zip(region["chrom"], region["start"], region["end"]):
-                                ofh.append_interval(chrom=chrom, start=start, end=end, id=id)
+                bed_line_ctr = 0
+                with gzip.open(bed3_to_vcf_idx, "wb") as idx_conv_fh:
+                    with BedWriter(temp_bed3_file) as ofh:
+                        for record in vcf_fh:
+                            if not is_indel_wrapper(record):
+                                region = vcf_to_region(record)
+                                id = vcf_id_generator_fn(record)
+                                for chrom, start, end in zip(region["chrom"], region["start"], region["end"]):
+                                    ofh.append_interval(chrom=chrom, start=start, end=end, id=bed_line_ctr)
+                                    idx_conv_fh.write(("%s\t%d\n" % (id, bed_line_ctr)).encode())
+                                    bed_line_ctr += 1
                 vcf_fh.close()
             elif (bed_to_region is not None) and (bed_fpath is not None):
                 logger.warn("Using bed file %s to define the dataloader intervals." % bed_fpath)
@@ -758,7 +765,7 @@ class MutationMap(object):
             for k in self.exec_files_bed_keys:
                 dataloader_args[k] = temp_bed3_file
 
-        return dataloader_args, temp_bed3_file, vcf_search_regions
+        return dataloader_args, temp_bed3_file, vcf_search_regions, bed3_to_vcf_idx
 
     def _generate_mutation_map(self,
                                vcf_fpath=None,
@@ -811,11 +818,11 @@ class MutationMap(object):
         if (vcf_fpath is not None) and (vcf_id_generator_fn is None):
             raise Exception("If `vcf_fpath` is set then also `vcf_id_generator_fn` has to be defined!")
 
-        dataloader_args, temp_bed3_file, vcf_search_regions = self._setup_dataloader_kwargs(vcf_fpath,
-                                                                                            bed_fpath,
-                                                                                            vcf_to_region,
-                                                                                            bed_to_region,
-                                                                                            vcf_id_generator_fn)
+        dataloader_args, temp_bed3_file, vcf_search_regions, bed3_to_vcf_idx = self._setup_dataloader_kwargs(vcf_fpath,
+                                                                                                             bed_fpath,
+                                                                                                             vcf_to_region,
+                                                                                                             bed_to_region,
+                                                                                                             vcf_id_generator_fn)
 
         model_out_annotation = self.model_info_extractor.get_model_out_annotation()
 
@@ -832,6 +839,10 @@ class MutationMap(object):
             vcf_fh = cyvcf2.VCF(vcf_fpath, "r")
         if bed_fpath is not None:
             bed_obj = BedTool(bed_fpath).tabix()
+
+        bed_id_conv_fh = None
+        if bed3_to_vcf_idx is not None:
+            bed_id_conv_fh = gzip.open(bed3_to_vcf_idx, "rb")
 
         # pre-process regions
         keys = set()  # what is that?
@@ -859,7 +870,8 @@ class MutationMap(object):
                                                               vcf_id_generator_fn=vcf_id_generator_fn,
                                                               vcf_search_regions=vcf_search_regions,
                                                               generate_rc=self.model_info_extractor.use_seq_only_rc,
-                                                              batch_size=batch_size)
+                                                              batch_size=batch_size,
+                                                              bed_id_conv_fh=bed_id_conv_fh)
 
             dl_batch_res = []
             # Keep the following metadata entries from the from the lines
@@ -905,6 +917,9 @@ class MutationMap(object):
 
         if vcf_fh is not None:
             vcf_fh.close()
+
+        if bed_id_conv_fh is not None:
+            bed_id_conv_fh.close()
 
         try:
             if temp_bed3_file is not None:

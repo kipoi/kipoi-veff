@@ -207,7 +207,6 @@ class RegionGenerator(object):
 
 
 class SnvCenteredRg(RegionGenerator):
-
     def __init__(self, model_info_extractor, seq_length=None):
         """
         Arguments:
@@ -237,7 +236,6 @@ class SnvCenteredRg(RegionGenerator):
 
 
 class BedOverlappingRg(RegionGenerator):
-
     def __init__(self, model_info_extractor, seq_length=None):
         super(BedOverlappingRg, self).__init__(model_info_extractor)
         if seq_length is not None:
@@ -267,7 +265,6 @@ class BedOverlappingRg(RegionGenerator):
 
 
 class SnvPosRestrictedRg(RegionGenerator):
-
     def __init__(self, model_info_extractor, pybed_def, seq_length=None):
         super(SnvPosRestrictedRg, self).__init__(model_info_extractor)
         self.tabixed = pybed_def.tabix(in_place=False)
@@ -315,7 +312,6 @@ class SnvPosRestrictedRg(RegionGenerator):
 
 
 class ModelInfoExtractor(object):
-
     def __init__(self, model_obj, dataloader_obj):
         self.model = model_obj
         self.dataloader = dataloader_obj
@@ -336,13 +332,19 @@ class ModelInfoExtractor(object):
                             "assuming 1-hot encoded DNA sequence." % str(seq_field))
 
             if (special_type is None) or (special_type == kipoi.components.ArraySpecialType.DNASeq):
-                dna_seq_trafo = ReshapeDna(_get_seq_shape(dataloader_obj, seq_field))
+                try:
+                    dna_seq_trafo = ReshapeDna(_get_seq_shape(dataloader_obj, seq_field))
+                except:
+                    dna_seq_trafo = ReshapeDna(_get_seq_shape_model(model_obj, seq_field))
                 self.seq_input_mutator[seq_field] = OneHotSequenceMutator(dna_seq_trafo)
                 self.seq_to_str_converter[seq_field] = OneHotSeqExtractor(dna_seq_trafo)
                 self.seq_input_array_trafo[seq_field] = dna_seq_trafo
 
             if special_type == kipoi.components.ArraySpecialType.DNAStringSeq:
-                dna_seq_trafo = ReshapeDnaString(_get_seq_shape(dataloader_obj, seq_field))
+                try:
+                    dna_seq_trafo = ReshapeDnaString(_get_seq_shape(dataloader_obj, seq_field))
+                except:
+                    dna_seq_trafo = ReshapeDnaString(_get_seq_shape_model(model_obj, seq_field))
                 self.seq_input_mutator[seq_field] = DNAStringSequenceMutator(dna_seq_trafo)
                 self.seq_to_str_converter[seq_field] = StrSeqExtractor(dna_seq_trafo)
                 self.seq_input_array_trafo[seq_field] = dna_seq_trafo
@@ -474,6 +476,16 @@ def _get_seq_shape(dataloader, seq_field):
     return orig_shape
 
 
+def _get_seq_shape_model(model, seq_field):
+    if isinstance(model.schema.inputs, dict):
+        orig_shape = model.schema.inputs[seq_field].shape
+    elif isinstance(model.schema.inputs, list):
+        orig_shape = [x.shape for x in model.schema.inputs if x.name == seq_field][0]
+    else:
+        orig_shape = model.schema.inputs.shape
+    return orig_shape
+
+
 def _get_dl_bed_fields(dataloader):
     if dataloader.postprocessing.get("variant_effects", None) is None:
         return None
@@ -512,7 +524,6 @@ class OneHotSeqExtractor(object):
 
 
 class StrSeqExtractor(object):
-
     def __init__(self, array_trafo=None):
         self.array_trafo = array_trafo
 
@@ -529,7 +540,6 @@ class StrSeqExtractor(object):
 
 
 class VariantLocalisation(object):
-
     def __init__(self):
         self.obj_keys = ["pp_line", "varpos_rel", "ref", "alt", "start", "end", "id", "do_mutate", "strand"]
         self.dummy_initialisable_keys = ["varpos_rel", "ref", "alt", "start", "end", "id", "strand"]
@@ -540,7 +550,7 @@ class VariantLocalisation(object):
         strand_avail = False
         strand_default = "."
         if ("strand" in ranges_input_obj) and (isinstance(ranges_input_obj["strand"], list) or
-                                               isinstance(ranges_input_obj["strand"], np.ndarray)):
+                                                   isinstance(ranges_input_obj["strand"], np.ndarray)):
             strand_avail = True
 
         # If the strand is a single string value rather than a list or numpy array than use that as a
@@ -566,7 +576,7 @@ class VariantLocalisation(object):
                 pre_new_vals["varpos_rel"] = int(record.POS) - pre_new_vals["start"]
                 # Check if variant position is valid
                 if not ((pre_new_vals["varpos_rel"] < 0) or
-                        (pre_new_vals["varpos_rel"] > (pre_new_vals["end"] - pre_new_vals["start"] + 1))):
+                            (pre_new_vals["varpos_rel"] > (pre_new_vals["end"] - pre_new_vals["start"] + 1))):
 
                     # If variant lies in the region then actually mutate it with the first alternative allele
                     pre_new_vals["do_mutate"] = True
