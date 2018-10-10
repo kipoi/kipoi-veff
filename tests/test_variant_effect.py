@@ -1170,7 +1170,9 @@ def test_score_variant_subsetting(tmpdir):
         install_model_requirements("DeepSEA/variantEffects", source="kipoi", and_dataloaders=True)
     model = kipoi.get_model("DeepSEA/variantEffects", source="kipoi")
     #
-    dataloader_arguments = model.default_dataloader.example_kwargs
+    import os
+    cwd = os.getcwd()
+    dataloader_arguments = {"fasta_file": cwd+"/tests/data/hg38_chr22.fa"}
     #
     model_output_names = model.schema.targets.column_labels
     # Run the actual predictions

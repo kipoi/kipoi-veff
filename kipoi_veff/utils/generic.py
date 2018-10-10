@@ -332,19 +332,13 @@ class ModelInfoExtractor(object):
                             "assuming 1-hot encoded DNA sequence." % str(seq_field))
 
             if (special_type is None) or (special_type == kipoi.components.ArraySpecialType.DNASeq):
-                try:
-                    dna_seq_trafo = ReshapeDna(_get_seq_shape(dataloader_obj, seq_field))
-                except:
-                    dna_seq_trafo = ReshapeDna(_get_seq_shape_model(model_obj, seq_field))
+                dna_seq_trafo = ReshapeDna(_get_seq_shape_model(model_obj, seq_field))
                 self.seq_input_mutator[seq_field] = OneHotSequenceMutator(dna_seq_trafo)
                 self.seq_to_str_converter[seq_field] = OneHotSeqExtractor(dna_seq_trafo)
                 self.seq_input_array_trafo[seq_field] = dna_seq_trafo
 
             if special_type == kipoi.components.ArraySpecialType.DNAStringSeq:
-                try:
-                    dna_seq_trafo = ReshapeDnaString(_get_seq_shape(dataloader_obj, seq_field))
-                except:
-                    dna_seq_trafo = ReshapeDnaString(_get_seq_shape_model(model_obj, seq_field))
+                dna_seq_trafo = ReshapeDnaString(_get_seq_shape_model(model_obj, seq_field))
                 self.seq_input_mutator[seq_field] = DNAStringSequenceMutator(dna_seq_trafo)
                 self.seq_to_str_converter[seq_field] = StrSeqExtractor(dna_seq_trafo)
                 self.seq_input_array_trafo[seq_field] = dna_seq_trafo
