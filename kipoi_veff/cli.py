@@ -125,7 +125,6 @@ def cli_score_variants(command, raw_args):
 
     # Check that all the folders exist
     file_exists(args.input_vcf, logger)
-    dir_exists(os.path.dirname(args.output_vcf), logger)
     if args.extra_output is not None:
         dir_exists(os.path.dirname(args.extra_output), logger)
 
@@ -172,6 +171,7 @@ def cli_score_variants(command, raw_args):
         model_name_safe = model_name.replace("/", "_")
         output_vcf_model = None
         if args.output_vcf is not None:
+            dir_exists(os.path.dirname(args.output_vcf), logger)
             output_vcf_model = args.output_vcf
             # If multiple models are to be analysed then vcfs need renaming.
             if n_models > 1:
