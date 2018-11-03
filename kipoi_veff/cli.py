@@ -13,6 +13,7 @@ import kipoi_veff
 from kipoi.cli.parser_utils import add_model, add_dataloader, file_exists, dir_exists
 from kipoi_veff.specs import VarEffectFuncType
 from kipoi_veff.scores import get_scoring_fns
+from kipoi_veff.utils.io import SyncBatchWriter
 from kipoi import writers
 from kipoi.utils import cd
 from kipoi.utils import parse_json_file_str
@@ -63,7 +64,7 @@ def cli_score_variants(command, raw_args):
     # - --output -> -e, --extra_output
     # - remove - -install_req
     # - scoring_kwargs -> score_kwargs
-    AVAILABLE_FORMATS = ["tsv", "hdf5", "h5"]
+    AVAILABLE_FORMATS = [k for k in writers.FILE_SUFFIX_MAP if k != 'bed']
     assert command == "score_variants"
     parser = argparse.ArgumentParser('kipoi veff {}'.format(command),
                                      description='Predict effect of SNVs using ISM.')
@@ -91,9 +92,9 @@ def cli_score_variants(command, raw_args):
                         help="Number of parallel workers for loading the dataset")
     parser.add_argument('-r', '--restriction_bed', default=None,
                         help="Regions for prediction can only be subsets of this bed file")
-    parser.add_argument('-e', '--extra_output', required=False,
-                        help="Additional output file. File format is inferred from the file path ending" +
-                             ". Available file formats are: {0}".format(",".join(AVAILABLE_FORMATS)))
+    parser.add_argument('-e', '--extra_output', type=str, default=None, required=False,
+                        help="Additional output files in other (non-vcf) formats. File format is inferred from the file path ending" +
+                             ". Available file formats are: {0}".format(", ".join(["." + k for k in AVAILABLE_FORMATS])))
     parser.add_argument('-s', "--scores", default="diff", nargs="+",
                         help="Scoring method to be used. Only scoring methods selected in the model yaml file are"
                              "available except for `diff` which is always available. Select scoring function by the"
@@ -118,26 +119,24 @@ def cli_score_variants(command, raw_args):
                         help="Optional parameter: Only return predictions for the selected model outputs. Give integer"
                              "indices of the selected model output(s).")
 
-
     args = parser.parse_args(raw_args)
     # Make sure all the multi-model arguments like source, dataloader etc. fit together
     _prepare_multi_model_args(args)
 
     # Check that all the folders exist
     file_exists(args.input_vcf, logger)
+
+    if args.output_vcf is None and args.extra_output is None:
+        logger.error("One of the two needs to be specified: --output_vcf or --extra_output")
+        sys.exit(1)
+
     if args.extra_output is not None:
         dir_exists(os.path.dirname(args.extra_output), logger)
-
-        # infer the file format
-        args.file_format = args.extra_output.split(".")[-1]
-        if args.file_format not in AVAILABLE_FORMATS:
+        ending = args.extra_output.split('.')[-1]
+        if ending not in AVAILABLE_FORMATS:
             logger.error("File ending: {0} for file {1} not from {2}".
-                         format(args.file_format, args.extra_output, AVAILABLE_FORMATS))
+                         format(ending, args.extra_output, AVAILABLE_FORMATS))
             sys.exit(1)
-
-        if args.file_format in ["hdf5", "h5"]:
-            # only if hdf5 output is used
-            import deepdish
 
     if not isinstance(args.scores, list):
         args.scores = [args.scores]
@@ -157,11 +156,8 @@ def cli_score_variants(command, raw_args):
                                      "path of a file containing them) must be given for every "
                                      "`--scores` function.")
 
-    keep_predictions = args.extra_output is not None
-
     n_models = len(args.model)
 
-    res = {}
     for model_name, model_source, dataloader, dataloader_source, dataloader_args, seq_length in zip(args.model,
                                                                                                     args.source,
                                                                                                     args.dataloader,
@@ -169,6 +165,8 @@ def cli_score_variants(command, raw_args):
                                                                                                     args.dataloader_args,
                                                                                                     args.seq_length):
         model_name_safe = model_name.replace("/", "_")
+
+        # VCF writer
         output_vcf_model = None
         if args.output_vcf is not None:
             dir_exists(os.path.dirname(args.output_vcf), logger)
@@ -178,6 +176,20 @@ def cli_score_variants(command, raw_args):
                 if output_vcf_model.endswith(".vcf"):
                     output_vcf_model = output_vcf_model[:-4]
                 output_vcf_model += model_name_safe + ".vcf"
+
+        # Other writers
+        if args.extra_output is not None:
+            dir_exists(os.path.dirname(args.extra_output), logger)
+            if n_models > 1:
+                ending = args.extra_output.split('.')[-1]
+                extra_output = args.extra_output[:-len(ending)] + model_name_safe + "." + ending
+            else:
+                extra_output = args.extra_output
+            writer = writers.get_writer(extra_output, metadata_schema=None)
+            assert writer is not None
+            extra_writers = [SyncBatchWriter(writer)]
+        else:
+            extra_writers = []
 
         dataloader_arguments = parse_json_file_str(dataloader_args)
 
@@ -208,37 +220,38 @@ def cli_score_variants(command, raw_args):
         elif args.model_outputs_i is not None:
             model_outputs = args.model_outputs_i
 
-        res[model_name_safe] = kipoi_veff.score_variants(model,
-                                                         dataloader_arguments,
-                                                         args.input_vcf,
-                                                         output_vcf_model,
-                                                         scores=args.scores,
-                                                         score_kwargs=score_kwargs,
-                                                         num_workers=args.num_workers,
-                                                         batch_size=args.batch_size,
-                                                         seq_length=seq_length,
-                                                         std_var_id=args.std_var_id,
-                                                         restriction_bed=args.restriction_bed,
-                                                         return_predictions=keep_predictions,
-                                                         model_outputs= model_outputs)
+        kipoi_veff.score_variants(model,
+                                  dataloader_arguments,
+                                  args.input_vcf,
+                                  output_vcf=output_vcf_model,
+                                  output_writers=extra_writers,
+                                  scores=args.scores,
+                                  score_kwargs=score_kwargs,
+                                  num_workers=args.num_workers,
+                                  batch_size=args.batch_size,
+                                  seq_length=seq_length,
+                                  std_var_id=args.std_var_id,
+                                  restriction_bed=args.restriction_bed,
+                                  return_predictions=False,
+                                  model_outputs=model_outputs)
 
     # tabular files
-    if keep_predictions:
-        if args.file_format in ["tsv"]:
-            for model_name in res:
-                for i, k in enumerate(res[model_name]):
-                    # Remove an old file if it is still there...
-                    if i == 0:
-                        try:
-                            os.unlink(args.extra_output)
-                        except Exception:
-                            pass
-                    with open(args.extra_output, "w") as ofh:
-                        ofh.write("KPVEP_%s:%s\n" % (k.upper(), model_name))
-                        res[model_name][k].to_csv(args.extra_output, sep="\t", mode="a")
+    # if keep_predictions:
+    #     if file_format in ["tsv"]:
+    #         for model_name in res:
+    #             for i, k in enumerate(res[model_name]):
+    #                 # Remove an old file if it is still there...
+    #                 if i == 0:
+    #                     try:
+    #                         os.unlink(args.extra_output)
+    #                     except Exception:
+    #                         pass
+    #                 with open(args.extra_output, "w") as ofh:
+    #                     ofh.write("KPVEP_%s:%s\n" % (k.upper(), model_name))
+    #                     res[model_name][k].to_csv(args.extra_output, sep="\t", mode="a")
 
-        if args.file_format in ["hdf5", "h5"]:
-            deepdish.io.save(args.extra_output, res)
+    #     if file_format in ["hdf5", "h5"]:
+    #         deepdish.io.save(args.extra_output, res)
 
     logger.info('Successfully predicted samples')
 

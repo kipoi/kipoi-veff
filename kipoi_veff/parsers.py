@@ -71,6 +71,17 @@ def parse_kipoi_info(elem, colnames, prefix="", add_index=True):
                             for i, c in enumerate(colnames)])
 
 
+def variant_to_dict(variant):
+    return OrderedDict([
+        ('variant_id', variant.ID),
+        # ('variant_id', variant.ID),
+        ('variant_chr', variant.CHROM),
+        ('variant_pos', variant.POS),
+        ('variant_ref', variant.REF),
+        ('variant_alt', variant.ALT[0]),  # WARNING - assuming a single alternative
+    ])
+
+
 # TODO - convert all info tags to a nice dictionary or pandas data-frame
 #         - TODO ?- should I convert it to a dictionary or a pandas.DataFrame?
 #         - TODO ?- which columns do we need in the final table
@@ -129,14 +140,7 @@ class KipoiVCFParser(object):
 
     def __next__(self):
         variant = next(self.vcf)
-        out = OrderedDict([
-            ('variant_id', variant.ID),
-            # ('variant_id', variant.ID),
-            ('variant_chr', variant.CHROM),
-            ('variant_pos', variant.POS),
-            ('variant_ref', variant.REF),
-            ('variant_alt', variant.ALT[0]),  # WARNING - assuming a single alternative
-        ])
+        out = variant_to_dict(variant)
 
         for k in self.other_columns:
             out['other_' + k] = variant.INFO.get(k)
