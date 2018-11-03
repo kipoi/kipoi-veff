@@ -9,6 +9,8 @@ import config
 from utils import compare_vcfs, temp
 from kipoi.readers import HDF5Reader
 import numpy as np
+import kipoi_veff
+
 
 if config.install_req:
     INSTALL_FLAG = "--install_req"
@@ -85,7 +87,7 @@ def test_predict_variants_example_multimodel(file_format, tmpdir):
             "--source=dir",
             "--batch_size=4",
             "--dataloader_args='%s'" % dataloader_kwargs_str,
-            "--input_vcf", temp(main_example_dir + "/example_files/variants.vcf", tmpdir),
+            "--input_vcf", main_example_dir + "/example_files/variants.vcf",
             # this one was now gone in the master?!
             "--output_vcf", vcf_tmpfile,
             "--extra_output", tmpfile]
@@ -93,36 +95,23 @@ def test_predict_variants_example_multimodel(file_format, tmpdir):
     if INSTALL_FLAG:
         args.append(INSTALL_FLAG)
 
-    returncode = subprocess.call(args=args,
-                                 cwd=os.path.realpath(main_example_dir) + "/../../../")
-    assert returncode == 0
-
-    assert os.path.exists(tmpfile)
+    # run the command
+    kipoi_veff.cli.cli_score_variants('score_variants', args[3:])
 
     for example_dir in example_dirs:
         # assert filecmp.cmp(example_dir + "/example_files/variants_ref_out.vcf", vcf_tmpfile)
-        vcf_tmpfile_model = vcf_tmpfile[:-4] + example_dir.replace("/", "_") + ".vcf"
+        model_name_safe = example_dir.replace("/", "_")
+        vcf_tmpfile_model = vcf_tmpfile[:-4] + model_name_safe + ".vcf"
         assert os.path.exists(vcf_tmpfile_model)
         compare_vcfs(example_dir + "/example_files/variants_ref_out.vcf", vcf_tmpfile_model)
+        ending = tmpfile.split('.')[-1]
+        extra_output = tmpfile[:-len(ending)] + model_name_safe + "." + ending
+        assert os.path.exists(extra_output)
 
-    if file_format == "hdf5":
-        data = HDF5Reader.load(tmpfile)
-    else:
-        table_labels = []
-        table_starts = []
-        table_ends = []
-        tables = {}
-        head_line_id = "KPVEP_"
-        with open(tmpfile, "r") as ifh:
-            for i, l in enumerate(ifh):
-                if head_line_id in l:
-                    if (len(table_starts) > 0):
-                        table_ends.append(i - 1)
-                    table_labels.append(l.rstrip()[len(head_line_id):])
-                    table_starts.append(i + 1)
-            table_ends.append(i)
-        for label, start, end in zip(table_labels, table_starts, table_ends):
-            tables[label] = pd.read_csv(tmpfile, sep="\t", skiprows=start, nrows=end - start, index_col=0)
+        if file_format == "hdf5":
+            data = HDF5Reader.load(extra_output)
+        else:
+            data = pd.read_table(extra_output)
 
 
 @pytest.mark.parametrize("example", ["rbp", "non_bedinput_model"])

@@ -22,9 +22,9 @@ from kipoi.pipeline import install_model_requirements
 from kipoi_veff import analyse_model_preds
 from kipoi_veff.scores import Logit, LogitRef, LogitAlt, Diff, DeepSEA_effect, RCScore, scoring_options
 from kipoi_veff.utils.mutators import rc_str, _modify_single_string_base
-from kipoi.utils import cd
 from kipoi_veff.utils import is_indel_wrapper
 from kipoi_veff.snv_predict import homogenise_seqname
+from kipoi_veff.utils.io import SyncBatchWriter
 import os
 import copy
 
@@ -563,6 +563,60 @@ def test_var_eff_pred_varseq(tmpdir):
     # assert filecmp.cmp(out_vcf_fpath, ref_out_vcf_fpath)
     compare_vcfs(out_vcf_fpath, ref_out_vcf_fpath)
     os.unlink(out_vcf_fpath)
+
+
+def test_other_writers(tmpdir):
+    if sys.version_info[0] == 2:
+        pytest.skip("rbp example not supported on python 2 ")
+    model_dir = "tests/models/var_seqlen_model/"
+    if INSTALL_REQ:
+        install_model_requirements(model_dir, "dir", and_dataloaders=True)
+    #
+    model = kipoi.get_model(model_dir, source="dir")
+    # The preprocessor
+    Dataloader = kipoi.get_dataloader_factory(model_dir, source="dir")
+    #
+    dataloader_arguments = {
+        "fasta_file": "example_files/hg38_chr22.fa",
+        "preproc_transformer": "dataloader_files/encodeSplines.pkl",
+        "gtf_file": "example_files/gencode_v25_chr22.gtf.pkl.gz",
+        "intervals_file": "example_files/variant_centered_intervals.tsv"
+    }
+    dataloader_arguments = {k: model_dir + v for k, v in dataloader_arguments.items()}
+    vcf_path = model_dir + "example_files/variants.vcf"
+    ref_out_vcf_fpath = model_dir + "example_files/variants_ref_out.vcf"
+    #
+    vcf_path = kipoi_veff.ensure_tabixed_vcf(vcf_path)
+    model_info = kipoi_veff.ModelInfoExtractor(model, Dataloader)
+
+    #
+    from kipoi.writers import HDF5BatchWriter, TsvBatchWriter, MultipleBatchWriter
+
+    h5_path = os.path.join(str(tmpdir), 'preds.h5')
+    tsv_path = os.path.join(str(tmpdir), 'preds.tsv')
+    writer = SyncBatchWriter(MultipleBatchWriter([HDF5BatchWriter(h5_path),
+                                                  TsvBatchWriter(tsv_path)]))
+    # writer = kipoi_veff.VcfWriter(model, vcf_path, out_vcf_fpath, standardise_var_id=True)
+
+    vcf_to_region = None
+    with pytest.raises(Exception):
+        # This has to raise an exception as the sequence length is None.
+        vcf_to_region = kipoi_veff.SnvCenteredRg(model_info)
+    sp.predict_snvs(model, Dataloader, vcf_path, dataloader_args=dataloader_arguments,
+                    evaluation_function=analyse_model_preds, batch_size=32,
+                    vcf_to_region=vcf_to_region,
+                    evaluation_function_kwargs={'diff_types': {'diff': Diff("mean")}},
+                    return_predictions=False,
+                    sync_pred_writer=writer)
+
+    from kipoi.readers import HDF5Reader
+    r = HDF5Reader.load(h5_path)
+    assert len(r['line_idx']) == 6
+    from kipoi_veff.parsers import KipoiVCFParser
+    o = list(KipoiVCFParser(ref_out_vcf_fpath))
+    assert len(o) == 6
+    df = pd.read_table(tsv_path)
+    assert len(df) == 6
 
 
 def test_var_eff_pred(tmpdir):
@@ -1139,8 +1193,9 @@ def test_score_variants(tmpdir):
     dataloader_arguments = {k: model_dir + v for k, v in dataloader_arguments.items()}
     #
     # Run the actual predictions
-    vcf_path = temp(model_dir + "example_files/variants.vcf", tmpdir)
-    out_vcf_fpath = model_dir + "example_files/variants_generated.vcf"
+    vcf_path = model_dir + "example_files/variants.vcf"
+    out_vcf_fpath = os.path.join(str(tmpdir), "variants_generated.vcf")
+    out_vcf_fpath2 = os.path.join(str(tmpdir), "variants_generated2.vcf")
     ref_out_vcf_fpath = model_dir + "example_files/variants_ref_out.vcf"
 
     # with cd(model.source_dir):
@@ -1148,7 +1203,7 @@ def test_score_variants(tmpdir):
                             scores=['diff'], score_kwargs=[{"rc_merging": "mean"}], source="dir",
                             model_outputs=['rbp_prb'])
 
-    res = sp.score_variants(model, dataloader_arguments, vcf_path, out_vcf_fpath,
+    res = sp.score_variants(model, dataloader_arguments, vcf_path, out_vcf_fpath2,
                             scores=['diff'], score_kwargs=[{"rc_merging": "mean"}], source="dir",
                             model_outputs=[True], return_predictions=True)
 
@@ -1165,14 +1220,17 @@ def test_score_variants(tmpdir):
     assert os.path.exists(out_vcf_fpath)
     os.unlink(out_vcf_fpath)
 
+
 def test_score_variant_subsetting(tmpdir):
+    from kipoi.utils import cd
+
     if INSTALL_REQ:
         install_model_requirements("DeepSEA/variantEffects", source="kipoi", and_dataloaders=True)
     model = kipoi.get_model("DeepSEA/variantEffects", source="kipoi")
     #
     import os
     cwd = os.getcwd()
-    dataloader_arguments = {"fasta_file": cwd+"/tests/data/hg38_chr22.fa"}
+    dataloader_arguments = {"fasta_file": cwd + "/tests/data/hg38_chr22.fa"}
     #
     model_output_names = model.schema.targets.column_labels
     # Run the actual predictions

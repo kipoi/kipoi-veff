@@ -1,6 +1,9 @@
 from abc import abstractmethod
+import six
 import numpy as np
 from kipoi_veff.utils.generic import prep_str, convert_record, default_vcf_id_gen
+from kipoi_veff.parsers import variant_to_dict
+from kipoi.data_utils import numpy_collate, numpy_collate_concat
 import os
 import six
 import gzip
@@ -37,6 +40,25 @@ def recursive_h5_writer(objs, handle, create):
                 n = objs[key]
                 dset.resize(dset.shape[0] + n.shape[0], axis=0)
                 dset[-(n.shape[0]):] = n
+
+
+def validate_input(predictions, records, line_ids=None):
+    """Validate the input features
+    """
+    for k in predictions:
+        if predictions[k].shape[0] != len(records):
+            raise Exception(
+                "number of records does not match number the prediction rows for prediction %s." % str(k))
+
+    if line_ids is not None:
+        if line_ids.shape[0] != len(records):
+            raise Exception("number of line_ids does not match number of VCF records")
+
+
+def df_to_np_dict(df):
+    """Convert DataFrame to numpy dictionary
+    """
+    return {k: v.values for k, v in six.iteritems(dict(df))}
 
 
 class BedWriter:
@@ -208,14 +230,7 @@ class VcfWriterCyvcf2(SyncPredictonsWriter):
                         "Prediction columns are not identical for methods %s and %s" % (self.prediction_labels[0], k))
 
         # sanity check that the number of records matches the prediction rows:
-        for k in predictions:
-            if predictions[k].shape[0] != len(records):
-                raise Exception(
-                    "number of records does not match number the prediction rows for prediction %s." % str(k))
-
-        if line_ids is not None:
-            if line_ids.shape[0] != len(records):
-                raise Exception("number of line_ids does not match number of VCF records")
+        validate_input(predictions, records, line_ids)
 
         # Actually write the vcf entries.
         for pred_line, record in enumerate(records):
@@ -311,14 +326,7 @@ class VcfWriter(SyncPredictonsWriter):
                         "Prediction columns are not identical for methods %s and %s" % (self.prediction_labels[0], k))
 
         # sanity check that the number of records matches the prediction rows:
-        for k in predictions:
-            if predictions[k].shape[0] != len(records):
-                raise Exception(
-                    "number of records does not match number the prediction rows for prediction %s." % str(k))
-
-        if line_ids is not None:
-            if line_ids.shape[0] != len(records):
-                raise Exception("number of line_ids does not match number of VCF records")
+        validate_input(predictions, records, line_ids)
 
         # Actually write the vcf entries.
         for pred_line, record in enumerate(records):
@@ -339,3 +347,29 @@ class VcfWriter(SyncPredictonsWriter):
     def close(self):
         if self.vcf_writer is not None:
             self.vcf_writer.close()
+
+
+class SyncBatchWriter(SyncPredictonsWriter):
+    """Use batch writer from Kipoi to write the predictions to file
+
+    # Arguments
+      batch_writer: kipoi.writers.BatchWriter
+    """
+
+    def __init__(self, batch_writer):
+        self.batch_writer = batch_writer
+
+    def __call__(self, predictions, records, line_ids=None):
+        validate_input(predictions, records, line_ids)
+
+        if line_ids is None:
+            line_ids = {}
+
+        batch = numpy_collate([variant_to_dict(v) for v in records])
+        batch['line_idx'] = np.array(line_ids)
+        batch['preds'] = {k: df_to_np_dict(df) for k, df in six.iteritems(predictions)}
+
+        self.batch_writer.batch_write(batch)
+
+    def close(self):
+        self.batch_writer.close()

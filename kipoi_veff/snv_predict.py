@@ -286,7 +286,7 @@ def get_variants_df(seq_key, ranges_input_obj, vcf_records, process_lines, proce
                     "do_mutate": []}
 
     if ("strand" in ranges_input_obj) and (isinstance(ranges_input_obj["strand"], list) or
-                                               isinstance(ranges_input_obj["strand"], np.ndarray)):
+                                           isinstance(ranges_input_obj["strand"], np.ndarray)):
         preproc_conv["strand"] = []
 
     for i, record in enumerate(vcf_records):
@@ -302,7 +302,7 @@ def get_variants_df(seq_key, ranges_input_obj, vcf_records, process_lines, proce
             pre_new_vals["end"] = ranges_input_obj["end"][ranges_input_i]
             pre_new_vals["varpos_rel"] = int(record.POS) - pre_new_vals["start"]
             if not ((pre_new_vals["varpos_rel"] < 0) or
-                        (pre_new_vals["varpos_rel"] > (pre_new_vals["end"] - pre_new_vals["start"] + 1))):
+                    (pre_new_vals["varpos_rel"] > (pre_new_vals["end"] - pre_new_vals["start"] + 1))):
 
                 # If variant lies in the region then continue
                 pre_new_vals["do_mutate"] = True
@@ -486,7 +486,7 @@ def predict_snvs(model,
     annotation. For a detailed description of the requirements in the yaml files please take a look at
     the core `kipoi` documentation on how to write a `dataloader.yaml` file or at the documentation of 
     `kipoi-veff` in the section: `overview/#model-and-dataloader-requirements`.
-    
+
     The `evaluation_function` is evaluated after the model predictions for reference and alternative allele were
     performed. By default the `analyse_model_preds` function is used, which executes the functions defined in its
     argument `diff_types` on the reference and alternative prediction of every sample. When using the default
@@ -712,7 +712,8 @@ def _get_vcf_to_region(model_info, restriction_bed, seq_length):
 def score_variants(model,
                    dl_args,
                    input_vcf,
-                   output_vcf,
+                   output_vcf=None,
+                   output_writers=None,
                    scores=["logit_ref", "logit_alt", "ref", "alt", "logit", "diff"],
                    score_kwargs=None,
                    num_workers=0,
@@ -724,24 +725,25 @@ def score_variants(model,
                    return_predictions=False,
                    model_outputs=None):
     """Score variants: annotate the vcf file using model predictions for the reference and alternative alleles
-    
+
     The functional elements that generate a score from a set of predictions for reference and
     alternative allele are defined in the `scores` argument.
-    
+
     This function is the python version of the command-line call `score_variants` and is a convenience version
     of the `predict_snvs` function:
-    
+
     Prediction of effects of SNV based on a VCF. If desired the VCF can be stored with the predicted values as
     annotation. For a detailed description of the requirements in the yaml files please take a look at
-    the core `kipoi` documentation on how to write a `dataloader.yaml` file or at the documentation of 
-    `kipoi-veff` in the section: `overview/#model-and-dataloader-requirements`. 
-    
+    the core `kipoi` documentation on how to write a `dataloader.yaml` file or at the documentation of
+    `kipoi-veff` in the section: `overview/#model-and-dataloader-requirements`.
+
 
     # Arguments
         model: model string or a model class instance
         dl_args: dataloader arguments as a dictionary
         input_vcf: input vcf file path
         output_vcf: output vcf file path
+        output_writers: output writers a list of used output writers
         scores: list of score names to compute. See `kipoi_veff.scores`
         score_kwargs: optional, list of kwargs that corresponds to the entries in score.
         num_workers: number of paralell workers to use for dataloading
@@ -758,16 +760,23 @@ def score_variants(model,
         dict: containing a pandas DataFrame containing the calculated values
             for each model output (target) column VCF SNV line. If `return_predictions == False`, returns None.
     """
-    # TODO - call this function in kipoi_veff.cli.cli_score_variants
-    # TODO: Add tests
     import kipoi
     in_vcf_path_abs = os.path.realpath(input_vcf)
-    out_vcf_path_abs = os.path.realpath(output_vcf)
     if isinstance(model, str):
         model = kipoi.get_model(model, source=source, with_dataloader=True)
     Dataloader = model.default_dataloader
     vcf_path_tbx = ensure_tabixed_vcf(in_vcf_path_abs)  # TODO - run this within the function
-    writer = VcfWriter(model, in_vcf_path_abs, out_vcf_path_abs, standardise_var_id=std_var_id)
+
+    if output_writers is None:
+        output_writers = []
+
+    if output_vcf is not None:
+        out_vcf_path_abs = os.path.realpath(output_vcf)
+        output_writers.append(VcfWriter(model, in_vcf_path_abs, out_vcf_path_abs, standardise_var_id=std_var_id))
+    else:
+        if not output_writers:
+            raise ValueError("Either output_vcf or output_writers need to be specified")
+
     dts = get_scoring_fns(model, scores, score_kwargs)
 
     # Load effect prediction related model info
@@ -782,5 +791,5 @@ def score_variants(model,
                         num_workers=num_workers,
                         vcf_to_region=vcf_to_region,
                         evaluation_function_kwargs={'diff_types': dts, 'output_filter': model_outputs},
-                        sync_pred_writer=writer,
+                        sync_pred_writer=output_writers,
                         return_predictions=return_predictions)
