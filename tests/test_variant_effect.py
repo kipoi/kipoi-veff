@@ -610,7 +610,7 @@ def test_other_writers(tmpdir):
                     sync_pred_writer=writer)
 
     from kipoi.readers import HDF5Reader
-    r = HDF5Reader.load("/tmp/preds.h5")
+    r = HDF5Reader.load(h5_path)
     assert len(r['line_idx']) == 6
     from kipoi_veff.parsers import KipoiVCFParser
     o = list(KipoiVCFParser(ref_out_vcf_fpath))
