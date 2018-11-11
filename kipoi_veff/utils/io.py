@@ -1,5 +1,6 @@
 from abc import abstractmethod
 import six
+import pandas as pd
 import numpy as np
 from kipoi_veff.utils.generic import prep_str, convert_record, default_vcf_id_gen
 from kipoi_veff.parsers import variant_to_dict
@@ -356,8 +357,10 @@ class SyncBatchWriter(SyncPredictonsWriter):
       batch_writer: kipoi.writers.BatchWriter
     """
 
-    def __init__(self, batch_writer):
+    def __init__(self, batch_writer, buffer_size=1):
         self.batch_writer = batch_writer
+        self.buffer_size = buffer_size
+        self.batch_buffer = []
 
     def __call__(self, predictions, records, line_ids=None):
         validate_input(predictions, records, line_ids)
@@ -365,11 +368,29 @@ class SyncBatchWriter(SyncPredictonsWriter):
         if line_ids is None:
             line_ids = {}
 
-        batch = numpy_collate([variant_to_dict(v) for v in records])
-        batch['line_idx'] = np.array(line_ids)
-        batch['preds'] = {k: df_to_np_dict(df) for k, df in six.iteritems(predictions)}
+        self.batch_buffer.append((predictions, records, np.array(line_ids)))
+
+        if len(self.batch_buffer) >= self.buffer_size:
+            self._flush_buffer()
+
+    def _flush_buffer(self):
+        if len(self.batch_buffer) == 0:
+            return
+        batch = numpy_collate([variant_to_dict(v)
+                               for predictions, records, line_ids in self.batch_buffer
+                               for v in records])
+        batch['line_idx'] = numpy_collate_concat([line_ids
+                                                  for predictions, records, line_ids in self.batch_buffer])
+
+        keys = list(self.batch_buffer[0][0].keys())
+        batch['preds'] = {k: df_to_np_dict(
+            pd.concat([predictions[k]
+                       for predictions, records, line_ids in self.batch_buffer], axis=0))
+            for k in keys}
 
         self.batch_writer.batch_write(batch)
+        self.batch_buffer = []
 
     def close(self):
+        self._flush_buffer()
         self.batch_writer.close()
