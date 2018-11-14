@@ -3,7 +3,7 @@ import logging.config
 import kipoi_veff.cli
 import sys
 import logging
-#logging.config.fileConfig(pkg_resources.resource_filename("kipoi_veff", "logging.conf")) # This line makes the tests fail
+logging.config.fileConfig(pkg_resources.resource_filename("kipoi_veff", "logging.conf")) # This line makes the tests fail
 logger = logging.getLogger(__name__)
 
 
