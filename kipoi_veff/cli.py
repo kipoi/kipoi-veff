@@ -471,10 +471,7 @@ def cli_main(command, raw_args):
     command_fn(args.command, raw_args[1:])
 
 
-def main():
+if __name__ == '__main__':
     command = sys.argv[1]
     raw_args = sys.argv[1:]
     cli_main(command, raw_args)
-
-if __name__ == '__main__':
-    main()
