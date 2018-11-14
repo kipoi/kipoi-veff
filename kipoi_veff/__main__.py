@@ -2,7 +2,7 @@ import pkg_resources
 import logging.config
 import kipoi_veff.cli
 import sys
-logging.config.fileConfig(pkg_resources.resource_filename(__name__, "logging.conf"))
+logging.config.fileConfig(pkg_resources.resource_filename("kipoi_veff", "logging.conf"))
 logger = logging.getLogger(__name__)
 
 
