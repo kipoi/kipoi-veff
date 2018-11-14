@@ -61,7 +61,7 @@ setup(
     extras_require={
         "develop": test_requirements,
     },
-    # entry_points={'console_scripts': ['kipoi_veff = kipoi_veff.cli:cli_main']},
+    # entry_points={'console_scripts': ['kipoi_veff = kipoi_veff.__main__:main']},
     license="MIT license",
     zip_safe=False,
     keywords=["variant effect prediction", "model zoo", "deep learning",

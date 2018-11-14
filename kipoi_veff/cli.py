@@ -82,7 +82,7 @@ def cli_score_variants(command, raw_args):
     parser.add_argument('--dataloader_args', nargs="+", default=[],
                         help="Dataloader arguments either as a json string:" +
                              "'{\"arg1\": 1} or as a file path to a json file")
-    parser.add_argument('-i', '--input_vcf',
+    parser.add_argument('-i', '--input_vcf', required=True,
                         help='Input VCF.')
     parser.add_argument('-o', '--output_vcf',
                         help='Output annotated VCF file path.', default=None)
@@ -212,6 +212,7 @@ def cli_score_variants(command, raw_args):
 
         if output_vcf_model is not None:
             logger.info('Annotated VCF will be written to %s.' % str(output_vcf_model))
+            
 
         model_outputs = None
         if args.model_outputs is not None:
@@ -470,7 +471,10 @@ def cli_main(command, raw_args):
     command_fn(args.command, raw_args[1:])
 
 
-if __name__ == '__main__':
+def main():
     command = sys.argv[1]
     raw_args = sys.argv[1:]
     cli_main(command, raw_args)
+
+if __name__ == '__main__':
+    main()
