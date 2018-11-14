@@ -21,6 +21,6 @@ from .mutation_map import MutationMap, MutationMapPlotter
 
 
 # Required by kipoi
-from .__main__ import cli_main
+from .cli import cli_main
 from .specs import VarEffectModelArgs as ModelParser
 from .specs import VarEffectDataLoaderArgs as DataloaderParser
