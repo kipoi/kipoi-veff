@@ -45,7 +45,8 @@ test_requirements = [
     "cython",
     # "genomelake",
     "keras",
-    "tensorflow"
+    "tensorflow",
+    "kipoiseq"
 ]
 
 setup(
