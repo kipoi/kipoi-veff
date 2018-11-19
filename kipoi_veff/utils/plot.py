@@ -17,7 +17,7 @@ def center_cmap(cmap, vmax, vmin, center):
 
 def seqlogo_heatmap(letter_heights, heatmap_data, ovlp_var=None, vocab="DNA", ax=None, show_letter_scale=False,
                     cmap=None, cbar=True, cbar_kws=None, cbar_ax=None, limit_region=None, var_box_color="black",
-                    show_var_id=True):
+                    show_var_id=True, box_alt=True, ref_seq=None):
     """
     Plot heatmap and seqlogo plot together in one axis.
 
@@ -27,6 +27,8 @@ def seqlogo_heatmap(letter_heights, heatmap_data, ovlp_var=None, vocab="DNA", ax
     Can also contain negative values.
         vocab: str, Vocabulary name. Can be: DNA, RNA, AA, RNAStruct.
         ax: matplotlib axis
+        box_alt: if true (default), variant box will be drawn on alternative sequence, otherwise on the reference sequence.
+        ref_seq: str, reference sequence. If provided, will be provided as xticklabels.
     """
     import matplotlib.pyplot as plt
     import matplotlib.patches as mpatches
@@ -115,6 +117,11 @@ def seqlogo_heatmap(letter_heights, heatmap_data, ovlp_var=None, vocab="DNA", ax
     ax.spines['bottom'].set_visible(False)
     ax.autoscale_view()
 
+    if ref_seq is not None:
+        xticklabels = list(ref_seq)
+        ax.set_xticklabels(xticklabels)
+        ax.axes.get_xaxis().set_visible(True)
+
     if ovlp_var is not None:
         # for every variant draw a rectangle
         for rel_pos, var_id, ref, alt in zip(ovlp_var["varpos_rel"], ovlp_var["id"], ovlp_var["ref"], ovlp_var["alt"]):
@@ -130,8 +137,10 @@ def seqlogo_heatmap(letter_heights, heatmap_data, ovlp_var=None, vocab="DNA", ax
             # Deprecated: draw bax around ref and alt.
             # y_lowlim = min(y_ref_lowlim, y_alt_lowlim)
             # box_height = np.abs(y_ref_lowlim - y_alt_lowlim) + 1
-            # only draw the box around the alternative allele.
-            y_lowlim = y_alt_lowlim
+            if box_alt:
+                y_lowlim = y_alt_lowlim
+            else:
+                y_lowlim = y_ref_lowlim
             box_height = 1
             ax.add_patch(
                 mpatches.Rectangle((rel_pos + 0.5, y_lowlim), box_width, box_height, fill=False, lw=2,
