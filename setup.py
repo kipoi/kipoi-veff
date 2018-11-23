@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 
 requirements = [
-    "kipoi>=0.5.8",
+    "kipoi>=0.6.1",
     # vep
     "pyvcf",
     "cyvcf2",
