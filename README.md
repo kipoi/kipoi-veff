@@ -21,6 +21,12 @@ pip install kipoi_veff
 
 In order to use the variant effect prediction plug-in with Kipoi the `--vep` argument has to be added when setting up the model environment with `kipoi create env <model_name> --vep`.
 
+Alternatively, you can use `conda` to install kipoi_veff:
+
+```sh
+conda install -c bioconda kipoi_veff
+```
+
 ## Usage example
 
 Main function of this package is `score_variants` accessible from the command line or python. It annotates the vcf file using model predictions for the reference and alternative alleles.
