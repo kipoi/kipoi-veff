@@ -595,7 +595,7 @@ def test_other_writers(tmpdir):
     h5_path = os.path.join(str(tmpdir), 'preds.h5')
     tsv_path = os.path.join(str(tmpdir), 'preds.tsv')
     writer = SyncBatchWriter(MultipleBatchWriter([HDF5BatchWriter(h5_path),
-                                                  TsvBatchWriter(tsv_path)]), buffer_size=2)
+                                                  TsvBatchWriter(tsv_path)]))
     # writer = kipoi_veff.VcfWriter(model, vcf_path, out_vcf_fpath, standardise_var_id=True)
 
     vcf_to_region = None

@@ -56,12 +56,6 @@ def validate_input(predictions, records, line_ids=None):
             raise Exception("number of line_ids does not match number of VCF records")
 
 
-def df_to_np_dict(df):
-    """Convert DataFrame to numpy dictionary
-    """
-    return {k: v.values for k, v in six.iteritems(dict(df))}
-
-
 class BedWriter:
     """
     simple class to save a bed file sequentially
@@ -352,15 +346,12 @@ class VcfWriter(SyncPredictonsWriter):
 
 class SyncBatchWriter(SyncPredictonsWriter):
     """Use batch writer from Kipoi to write the predictions to file
-
     # Arguments
       batch_writer: kipoi.writers.BatchWriter
     """
 
-    def __init__(self, batch_writer, buffer_size=1):
+    def __init__(self, batch_writer):
         self.batch_writer = batch_writer
-        self.buffer_size = buffer_size
-        self.batch_buffer = []
 
     def __call__(self, predictions, records, line_ids=None):
         validate_input(predictions, records, line_ids)
@@ -368,29 +359,11 @@ class SyncBatchWriter(SyncPredictonsWriter):
         if line_ids is None:
             line_ids = {}
 
-        self.batch_buffer.append((predictions, records, np.array(line_ids)))
-
-        if len(self.batch_buffer) >= self.buffer_size:
-            self._flush_buffer()
-
-    def _flush_buffer(self):
-        if len(self.batch_buffer) == 0:
-            return
-        batch = numpy_collate([variant_to_dict(v)
-                               for predictions, records, line_ids in self.batch_buffer
-                               for v in records])
-        batch['line_idx'] = numpy_collate_concat([line_ids
-                                                  for predictions, records, line_ids in self.batch_buffer])
-
-        keys = list(self.batch_buffer[0][0].keys())
-        batch['preds'] = {k: df_to_np_dict(
-            pd.concat([predictions[k]
-                       for predictions, records, line_ids in self.batch_buffer], axis=0))
-            for k in keys}
+        batch = numpy_collate([variant_to_dict(v) for v in records])
+        batch['line_idx'] = np.array(line_ids)
+        batch['preds'] = {k: df.values for k, df in six.iteritems(predictions)}
 
         self.batch_writer.batch_write(batch)
-        self.batch_buffer = []
 
     def close(self):
-        self._flush_buffer()
         self.batch_writer.close()
