@@ -54,6 +54,18 @@ def _prepare_multi_model_args(args):
                                                 "--dataloader_args", allow_zero=False)
 
 
+def get_single(x, name):
+    """Make sure only a single element is used
+    """
+    if isinstance(x, list):
+        if len(x) == 1:
+            return x[0]
+        else:
+            raise ValueError("Only a single {} can be used with --singularity".format(name))
+    else:
+        return x
+
+
 def cli_score_variants(command, raw_args):
     """CLI interface to score variants
     """
@@ -82,7 +94,7 @@ def cli_score_variants(command, raw_args):
     parser.add_argument('--dataloader_args', nargs="+", default=[],
                         help="Dataloader arguments either as a json string:" +
                              "'{\"arg1\": 1} or as a file path to a json file")
-    parser.add_argument('-i', '--input_vcf',
+    parser.add_argument('-i', '--input_vcf', required=True,
                         help='Input VCF.')
     parser.add_argument('-o', '--output_vcf',
                         help='Output annotated VCF file path.', default=None)
@@ -119,6 +131,11 @@ def cli_score_variants(command, raw_args):
                         help="Optional parameter: Only return predictions for the selected model outputs. Give integer"
                              "indices of the selected model output(s).")
 
+    parser.add_argument("--singularity", action='store_true',
+                        help="Run `kipoi predict` in the appropriate singularity container. "
+                        "Containters will get downloaded to ~/.kipoi/envs/ or to "
+                        "$SINGULARITY_CACHEDIR if set")
+
     args = parser.parse_args(raw_args)
     # Make sure all the multi-model arguments like source, dataloader etc. fit together
     _prepare_multi_model_args(args)
@@ -137,6 +154,36 @@ def cli_score_variants(command, raw_args):
             logger.error("File ending: {0} for file {1} not from {2}".
                          format(ending, args.extra_output, AVAILABLE_FORMATS))
             sys.exit(1)
+
+    # singularity_command
+    if args.singularity:
+        from kipoi.cli.singularity import singularity_command
+        logger.info("Running kipoi veff {} in the singularity container".format(command))
+
+        # Drop the singularity flag
+        raw_args = [x for x in raw_args if x != '--singularity']
+
+        # handle the list case
+        args.model = get_single(args.model, 'model')
+        args.dataloader_args = get_single(args.dataloader_args, 'dataloader_args')
+        args.source = get_single(args.source, 'source')
+
+        dataloader_kwargs = parse_json_file_str(args.dataloader_args)
+
+        # create output files
+        output_files = []
+        if args.output_vcf is not None:
+            output_files.append(args.output_vcf)
+        if args.extra_output is not None:
+            output_files.append(args.extra_output)
+
+        singularity_command(['kipoi', 'veff', command] + raw_args,
+                            model=args.model,
+                            dataloader_kwargs=dataloader_kwargs,
+                            output_files=output_files,
+                            source=args.source,
+                            dry_run=False)
+        return None
 
     if not isinstance(args.scores, list):
         args.scores = [args.scores]
@@ -158,6 +205,7 @@ def cli_score_variants(command, raw_args):
 
     n_models = len(args.model)
 
+    # TODO - remove the feature of running multiple models in parallel
     for model_name, model_source, dataloader, dataloader_source, dataloader_args, seq_length in zip(args.model,
                                                                                                     args.source,
                                                                                                     args.dataloader,
@@ -293,6 +341,11 @@ def cli_create_mutation_map(command, raw_args):
                         help="Optional parameter: Model input sequence length - necessary if the model does not have a "
                              "pre-defined input sequence length.")
 
+    parser.add_argument("--singularity", action='store_true',
+                        help="Run `kipoi predict` in the appropriate singularity container. "
+                        "Containters will get downloaded to ~/.kipoi/envs/ or to "
+                        "$SINGULARITY_CACHEDIR if set")
+
     args = parser.parse_args(raw_args)
 
     # extract args for kipoi.variant_effects.predict_snvs
@@ -302,6 +355,18 @@ def cli_create_mutation_map(command, raw_args):
     if args.output is None:
         raise Exception("Output file `--output` has to be set!")
 
+    if args.singularity:
+        from kipoi.cli.singularity import singularity_command
+        logger.info("Running kipoi veff in the singularity container".format(command))
+        # Drop the singularity flag
+        raw_args = [x for x in raw_args if x != '--singularity']
+        singularity_command(['kipoi', 'veff', command] + raw_args,
+                            args.model,
+                            dataloader_arguments,
+                            output_files=args.output,
+                            source=args.source,
+                            dry_run=False)
+        return None
     # --------------------------------------------
     # install args
     if args.install_req:

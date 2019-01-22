@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 
 requirements = [
-    "kipoi>=0.5.8",
+    "kipoi>=0.6.1",
     # vep
     "pyvcf",
     "cyvcf2",
@@ -45,12 +45,13 @@ test_requirements = [
     "cython",
     # "genomelake",
     "keras",
-    "tensorflow"
+    "tensorflow",
+    "kipoiseq"
 ]
 
 setup(
     name='kipoi_veff',
-    version='0.2.0',
+    version='0.2.1',
     description="kipoi_veff: variant effect prediction plugin for Kipoi",
     author="Kipoi team",
     author_email='avsec@in.tum.de',
@@ -61,7 +62,7 @@ setup(
     extras_require={
         "develop": test_requirements,
     },
-    # entry_points={'console_scripts': ['kipoi_veff = kipoi_veff.cli:cli_main']},
+    # entry_points={'console_scripts': ['kipoi_veff = kipoi_veff.__main__:main']},
     license="MIT license",
     zip_safe=False,
     keywords=["variant effect prediction", "model zoo", "deep learning",
