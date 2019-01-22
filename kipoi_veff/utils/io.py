@@ -1,5 +1,6 @@
 from abc import abstractmethod
 import six
+import pandas as pd
 import numpy as np
 from kipoi_veff.utils.generic import prep_str, convert_record, default_vcf_id_gen
 from kipoi_veff.parsers import variant_to_dict
@@ -53,12 +54,6 @@ def validate_input(predictions, records, line_ids=None):
     if line_ids is not None:
         if line_ids.shape[0] != len(records):
             raise Exception("number of line_ids does not match number of VCF records")
-
-
-def df_to_np_dict(df):
-    """Convert DataFrame to numpy dictionary
-    """
-    return {k: v.values for k, v in six.iteritems(dict(df))}
 
 
 class BedWriter:
@@ -351,7 +346,6 @@ class VcfWriter(SyncPredictonsWriter):
 
 class SyncBatchWriter(SyncPredictonsWriter):
     """Use batch writer from Kipoi to write the predictions to file
-
     # Arguments
       batch_writer: kipoi.writers.BatchWriter
     """
@@ -367,7 +361,7 @@ class SyncBatchWriter(SyncPredictonsWriter):
 
         batch = numpy_collate([variant_to_dict(v) for v in records])
         batch['line_idx'] = np.array(line_ids)
-        batch['preds'] = {k: df_to_np_dict(df) for k, df in six.iteritems(predictions)}
+        batch['preds'] = {k: df.values for k, df in six.iteritems(predictions)}
 
         self.batch_writer.batch_write(batch)
 

@@ -11,7 +11,7 @@ requirements = [
     "cyvcf2",
     "pybedtools",
     "pysam",  # required by pybedtools
-    "intervaltree",
+    "intervaltree<3",
     "deepdish",
     "matplotlib",
     "seaborn",
