@@ -73,8 +73,7 @@ def parse_kipoi_info(elem, colnames, prefix="", add_index=True):
 
 def variant_to_dict(variant):
     return OrderedDict([
-        ('variant_id', variant.ID),
-        # ('variant_id', variant.ID),
+        ('variant_id', "." if variant.ID is None else str(variant.ID)),
         ('variant_chr', variant.CHROM),
         ('variant_pos', variant.POS),
         ('variant_ref', variant.REF),
