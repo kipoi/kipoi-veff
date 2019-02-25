@@ -13,7 +13,7 @@ from kipoi_veff import BedOverlappingRg, SnvCenteredRg, ensure_tabixed_vcf
 from kipoi_veff.scores import Logit, get_scoring_fns
 from kipoi_veff.utils import select_from_dl_batch, OutputReshaper, default_vcf_id_gen, \
     ModelInfoExtractor, BedWriter, VariantLocalisation
-from kipoi.utils import cd
+from kipoi_utils.utils import cd
 from .snv_predict import SampleCounter, get_genomicranges_line, merge_intervals, get_variants_in_regions_search_vcf, \
     get_variants_in_regions_sequential_vcf, analyse_model_preds, _overlap_vcf_region
 from .utils import is_indel_wrapper

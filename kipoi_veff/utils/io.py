@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from kipoi_veff.utils.generic import prep_str, convert_record, default_vcf_id_gen
 from kipoi_veff.parsers import variant_to_dict
-from kipoi.data_utils import numpy_collate, numpy_collate_concat
+from kipoi_utils.data_utils import numpy_collate, numpy_collate_concat
 import os
 import six
 import gzip

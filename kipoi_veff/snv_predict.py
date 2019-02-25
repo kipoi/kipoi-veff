@@ -16,7 +16,7 @@ from kipoi_veff.utils import select_from_dl_batch, OutputReshaper, default_vcf_i
     ModelInfoExtractor, BedWriter, VariantLocalisation, ensure_tabixed_vcf
 from kipoi_veff.utils.io import VcfWriter
 from .utils import is_indel_wrapper
-from kipoi.utils import cd
+from kipoi_utils.utils import cd
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
