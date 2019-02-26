@@ -20,9 +20,14 @@ variables:
     run:
       name: Install pip dependencies
       command: |
-        pip install genomelake --no-deps
-        pip install pyfaidx
+        #pip install genomelake --no-deps
+        #pip install pyfaidx
         pip install kipoiseq
+  install_conda_deps: &install_conda_deps
+    run:
+      name: Install conda dependencies
+      command: |
+        conda install genomelake pyfaidx -c bioconda
   install_kipoi: &install_kipoi
     run:
       name: Install Kipoi
@@ -73,6 +78,7 @@ jobs:
       - *update_conda
       - *install_git_lfs
       - *update_pytorch
+      - *install_conda_deps
       - *install_pip_deps
       - *install_kipoi
       - *install_kipoi_veff
@@ -91,6 +97,7 @@ jobs:
       - *update_conda
       - *install_git_lfs
       - *update_pytorch
+      - *install_conda_deps
       - *install_pip_deps
       - *install_kipoi
       - *install_kipoi_veff
