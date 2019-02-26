@@ -10,7 +10,7 @@ import kipoi
 import logging
 import six
 from kipoi_veff.specs import VarEffectFuncType
-from kipoi.utils import load_module, getargs, parse_json_file_str
+from kipoi_utils.utils import load_module, getargs, parse_json_file_str
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
