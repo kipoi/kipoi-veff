@@ -52,7 +52,7 @@ test_requirements = [
 
 setup(
     name='kipoi_veff',
-    version='0.2.2',
+    version='0.2.3',
     description="kipoi_veff: variant effect prediction plugin for Kipoi",
     author="Kipoi team",
     author_email='avsec@in.tum.de',
