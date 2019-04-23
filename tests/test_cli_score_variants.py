@@ -63,40 +63,49 @@ def test_predict_variants_example_single_model(file_format, tmpdir):
 
     examples = "rbp", "non_bedinput_model"
     example_dirs = ["tests/models/{0}/".format(ex) for ex in examples]
-    main_example_dir = example_dirs[1]
 
     tmpdir_here = tmpdir.mkdir("example")
+    for i in range(2):
+        main_example_dir = example_dirs[1]
 
-    # non_bedinput_model is not compatible with restricted bed files as
-    # alterations in region generation have no influence on that model
-    tmpfile = str(tmpdir_here.join("out.{0}".format(file_format)))
-    vcf_tmpfile = str(tmpdir_here.join("out.{0}".format("vcf")))
+        
 
-    dataloader_kwargs = {"fasta_file": "example_files/hg38_chr22.fa",
-                         "preproc_transformer": "dataloader_files/encodeSplines.pkl",
-                         "gtf_file": "example_files/gencode_v25_chr22.gtf.pkl.gz",
-                         "intervals_file": "example_files/variant_intervals.tsv"}
-    dataloader_kwargs = {k: main_example_dir + v for k, v in dataloader_kwargs.items()}
-    import json
-    dataloader_kwargs_str = json.dumps(dataloader_kwargs)
+        # non_bedinput_model is not compatible with restricted bed files as
+        # alterations in region generation have no influence on that model
+        tmpfile = str(tmpdir_here.join("out.{0}".format(file_format)))
+        vcf_tmpfile = str(tmpdir_here.join("out.{0}".format("vcf")))
 
-    args = ["python", os.path.abspath("./kipoi_veff/cli.py"),
-            "score_variants",
-            # "./",  # directory
-            example_dirs[1],
-            "--source=dir",
-            "--batch_size=4",
-            "--dataloader_args='%s'" % dataloader_kwargs_str,
-            "--input_vcf", main_example_dir + "/example_files/variants.vcf",
-            # this one was now gone in the master?!
-            "--output_vcf", vcf_tmpfile,
-            "--extra_output", tmpfile]
-    # run the
-    if INSTALL_FLAG:
-        args.append(INSTALL_FLAG)
+        dataloader_kwargs = {"fasta_file": "example_files/hg38_chr22.fa",
+                             "preproc_transformer": "dataloader_files/encodeSplines.pkl",
+                             "gtf_file": "example_files/gencode_v25_chr22.gtf.pkl.gz",
+                             "intervals_file": "example_files/variant_intervals.tsv"}
+        dataloader_kwargs = {k: main_example_dir + v for k, v in dataloader_kwargs.items()}
+        import json
+        dataloader_kwargs_str = json.dumps(dataloader_kwargs)
 
-    # run the command
-    kipoi_veff.cli.cli_score_variants('score_variants', args[3:])
+        args = ["python", os.path.abspath("./kipoi_veff/cli.py"),
+                "score_variants",
+                # "./",  # directory
+                example_dirs[i],
+                "--source=dir",
+                "--batch_size=4",
+                "--dataloader_args='%s'" % dataloader_kwargs_str,
+                "--input_vcf", main_example_dir + "/example_files/variants.vcf",
+                # this one was now gone in the master?!
+                "--output_vcf", vcf_tmpfile,
+                "--extra_output", tmpfile]
+        # run the
+        if INSTALL_FLAG:
+            args.append(INSTALL_FLAG)
+
+        # run the command
+        kipoi_veff.cli.cli_score_variants('score_variants', args[3:])
+
+
+
+
+
+
 
     for example_dir in [example_dirs[1]]:
         # assert filecmp.cmp(example_dir + "/example_files/variants_ref_out.vcf", vcf_tmpfile)

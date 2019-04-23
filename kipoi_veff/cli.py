@@ -47,7 +47,7 @@ def cli_score_variants(command, raw_args):
     parser = argparse.ArgumentParser('kipoi veff {}'.format(command),
                                      description='Predict effect of SNVs using ISM.')
     parser.add_argument('model', help='Model name.')
-    parser.add_argument('--source', default=["kipoi"],
+    parser.add_argument('--source', default="kipoi",
                         choices=list(kipoi.config.model_sources().keys()),
                         help='Model source to use. Specified in ~/.kipoi/config.yaml' +
                              " under model_sources. " +
