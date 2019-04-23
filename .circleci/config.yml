@@ -88,64 +88,15 @@ jobs:
       - *store_test_results
       - *store_test_artifacts
 
-  test-py27:
-    docker:
-      - image: kipoi/miniconda:4.3.14
-    working_directory: ~/repo
-    steps:
-      - checkout
-      - *update_conda
-      - *install_git_lfs
-      - *update_pytorch
-      - *install_conda_deps
-      - *install_pip_deps
-      - *install_kipoi
-      - *install_kipoi_veff
-      - *kipoi_ls
-      - *run_tests
-      - *store_test_results
-      - *store_test_artifacts
-
-  build-deploy-docs:
-    docker:
-      # - image: continuumio/miniconda3:4.3.14
-      - image: kipoi/miniconda3:4.3.14
-      # - image: continuumio/anaconda3:5.0.1
-      # - image: circleci/python:3.5
-    working_directory: ~/repo
-    steps:
-      - add_ssh_keys:
-          fingerprints:
-            - 08:c1:46:ae:ea:06:99:b6:64:ee:3f:e0:98:ac:30:ce
-      - checkout
-      - run:
-          name: Install pip - Kipoi
-          command: pip install -e .
-      - run:
-          name: Install build deps
-          command: pip install nbconvert mkdocs pydoc-markdown
-      - run:
-          name: Build docs
-          command: |
-            cd docs/
-            mkdir -p theme_dir/img/ipynb/
-            ./render_ipynb.bash
-            pydocmd build
-      - run:
-          name: Deploy docs
-          command: .circleci/deploy_docs.bash
-
 workflows:
   version: 2
 
   test:
     jobs:
       - test-py36
-      - test-py27
       - build-deploy-docs:
           requires:
             - test-py36
-            - test-py27
           filters:
             branches:
               only:
