@@ -52,14 +52,9 @@ def cli_score_variants(command, raw_args):
                         help='Model source to use. Specified in ~/.kipoi/config.yaml' +
                              " under model_sources. " +
                              "'dir' is an additional source referring to the local folder.")
-    parser.add_argument('--dataloader', default=None,
-                        help="Dataloader name. If not specified, the model's default" +
-                             "DataLoader will be used")
-    parser.add_argument('--dataloader_source', default="kipoi",
-                        help="Dataloader source")
-    parser.add_argument('--dataloader_args', default=None,
-                        help="Dataloader arguments either as a json string:" +
-                             "'{\"arg1\": 1} or as a file path to a json file")
+
+    add_dataloader(parser=parser, with_args=True)
+
     parser.add_argument('-i', '--input_vcf', required=True,
                         help='Input VCF.')
     parser.add_argument('-o', '--output_vcf',
@@ -131,7 +126,7 @@ def cli_score_variants(command, raw_args):
         # Drop the singularity flag
         raw_args = [x for x in raw_args if x != '--singularity']
 
-        dataloader_kwargs = parse_json_file_str(args.dataloader_args)
+        dataloader_kwargs = parse_json_file_str_or_arglist(args.dataloader_args)
 
         # create output files
         output_files = []
@@ -166,77 +161,65 @@ def cli_score_variants(command, raw_args):
                                      "path of a file containing them) must be given for every "
                                      "`--scores` function.")
 
+    # VCF writer
+    output_vcf_model = None
+    if args.output_vcf is not None:
+        dir_exists(os.path.dirname(args.output_vcf), logger)
+        output_vcf_model = args.output_vcf
 
-    if True:
-        model_name = args.model
-        model_source = args.source
-        dataloader = args.dataloader
-        dataloader_source = args.dataloader_source
-        dataloader_args = args.dataloader_args
-        seq_length = args.seq_length
+    # Other writers
+    if args.extra_output is not None:
+        dir_exists(os.path.dirname(args.extra_output), logger)
+        extra_output = args.extra_output
+        writer = writers.get_writer(extra_output, metadata_schema=None)
+        assert writer is not None
+        extra_writers = [SyncBatchWriter(writer)]
+    else:
+        extra_writers = []
 
+    dataloader_arguments = parse_json_file_str_or_arglist(args.dataloader_args)
 
-        model_name_safe = model_name.replace("/", "_")
+    # --------------------------------------------
+    # load model & dataloader
+    model = kipoi.get_model(args.model, args.source)
 
-        # VCF writer
-        output_vcf_model = None
-        if args.output_vcf is not None:
-            dir_exists(os.path.dirname(args.output_vcf), logger)
-            output_vcf_model = args.output_vcf
+    if args.dataloader is not None:
+        Dl = kipoi.get_dataloader_factory(args.dataloader, args.dataloader_source)
+    else:
+        Dl = model.default_dataloader
 
-        # Other writers
-        if args.extra_output is not None:
-            dir_exists(os.path.dirname(args.extra_output), logger)
-            extra_output = args.extra_output
-            writer = writers.get_writer(extra_output, metadata_schema=None)
-            assert writer is not None
-            extra_writers = [SyncBatchWriter(writer)]
-        else:
-            extra_writers = []
+    # Load effect prediction related model info
+    model_info = kipoi_veff.ModelInfoExtractor(model, Dl)
 
-        dataloader_arguments = parse_json_file_str(dataloader_args)
+    if model_info.use_seq_only_rc:
+        logger.info('Model SUPPORTS simple reverse complementation of input DNA sequences.')
+    else:
+        logger.info('Model DOES NOT support simple reverse complementation of input DNA sequences.')
 
-        # --------------------------------------------
-        # load model & dataloader
-        model = kipoi.get_model(model_name, model_source)
+    if output_vcf_model is not None:
+        logger.info('Annotated VCF will be written to %s.' % str(output_vcf_model))
 
-        if dataloader is not None:
-            Dl = kipoi.get_dataloader_factory(dataloader, dataloader_source)
-        else:
-            Dl = model.default_dataloader
+    model_outputs = None
+    if args.model_outputs is not None:
+        model_outputs = args.model_outputs
 
-        # Load effect prediction related model info
-        model_info = kipoi_veff.ModelInfoExtractor(model, Dl)
+    elif args.model_outputs_i is not None:
+        model_outputs = args.model_outputs_i
 
-        if model_info.use_seq_only_rc:
-            logger.info('Model SUPPORTS simple reverse complementation of input DNA sequences.')
-        else:
-            logger.info('Model DOES NOT support simple reverse complementation of input DNA sequences.')
-
-        if output_vcf_model is not None:
-            logger.info('Annotated VCF will be written to %s.' % str(output_vcf_model))
-
-        model_outputs = None
-        if args.model_outputs is not None:
-            model_outputs = args.model_outputs
-
-        elif args.model_outputs_i is not None:
-            model_outputs = args.model_outputs_i
-
-        kipoi_veff.score_variants(model,
-                                  dataloader_arguments,
-                                  args.input_vcf,
-                                  output_vcf=output_vcf_model,
-                                  output_writers=extra_writers,
-                                  scores=args.scores,
-                                  score_kwargs=score_kwargs,
-                                  num_workers=args.num_workers,
-                                  batch_size=args.batch_size,
-                                  seq_length=seq_length,
-                                  std_var_id=args.std_var_id,
-                                  restriction_bed=args.restriction_bed,
-                                  return_predictions=False,
-                                  model_outputs=model_outputs)
+    kipoi_veff.score_variants(model,
+                              dataloader_arguments,
+                              args.input_vcf,
+                              output_vcf=output_vcf_model,
+                              output_writers=extra_writers,
+                              scores=args.scores,
+                              score_kwargs=score_kwargs,
+                              num_workers=args.num_workers,
+                              batch_size=args.batch_size,
+                              seq_length=args.seq_length,
+                              std_var_id=args.std_var_id,
+                              restriction_bed=args.restriction_bed,
+                              return_predictions=False,
+                              model_outputs=model_outputs)
 
 
     logger.info('Successfully predicted samples')
