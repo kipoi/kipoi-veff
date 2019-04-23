@@ -32,7 +32,7 @@ variables:
     run:
       name: Install Kipoi
       command: |
-        git clone git@github.com:kipoi/kipoi.git kipoi_pkg
+        git clone git@github.com:DerThorsten/kipoi.git -b niceparse kipoi_pkg
         cd kipoi_pkg
         pip install '.'
         cd ..
