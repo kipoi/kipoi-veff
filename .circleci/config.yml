@@ -34,7 +34,7 @@ variables:
       command: |
         git clone git@github.com:DerThorsten/kipoi.git -b niceparse kipoi_pkg
         cd kipoi_pkg
-        pip install '.'
+        pip install '.' --ignore-installed --no-deps
         cd ..
   install_kipoi_veff: &install_kipoi_veff
     run:
