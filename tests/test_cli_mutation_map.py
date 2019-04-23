@@ -36,7 +36,7 @@ def test_generate_mutation_maps_example(example, tmpdir):
     dataloader_kwargs = {k: example_dir + v for k, v in dataloader_kwargs.items()}
     import json
     dataloader_kwargs_str = json.dumps(dataloader_kwargs)
-
+    print("THE KWARG STR",dataloader_kwargs_str)
     args = ["python", os.path.abspath("./kipoi_veff/cli.py"),
             "create_mutation_map",
             # "./",  # directory
