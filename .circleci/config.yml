@@ -29,14 +29,14 @@ variables:
       command: |
         conda install genomelake pyfaidx -c bioconda
 
-  install_kipoi: &install_kipoi
-    run:
-      name: Install Kipoi
-      command: |
-        git clone git@github.com:DerThorsten/kipoi.git -b niceparse kipoi_pkg
-        cd kipoi_pkg
-        pip install '.' --no-deps
-        cd ..
+  # install_kipoi: &install_kipoi
+  #   run:
+  #     name: Install Kipoi
+  #     command: |
+  #       git clone git@github.com:DerThorsten/kipoi.git -b niceparse kipoi_pkg
+  #       cd kipoi_pkg
+  #       pip install '.' --no-deps
+  #       cd ..
   install_kipoi_veff: &install_kipoi_veff
     run:
       name: Install Kipoi-veff
@@ -81,9 +81,7 @@ jobs:
       - *update_pytorch
       - *install_conda_deps
       - *install_pip_deps
-      - *install_kipoi
       - *install_kipoi_veff
-      - *install_kipoi
       - *kipoi_ls
       - *run_tests
       - *run_coveralls

@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 
 requirements = [
-    "kipoi>=0.6.1",
+    "kipoi>=0.6.12",
     #$"git+ssh://git@github.com/DerThorsten/kipoi.git@niceparse",#egg=kipoi,
     "kipoi-utils>=0.1.12",
     # vep
