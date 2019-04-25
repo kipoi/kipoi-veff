@@ -16,43 +16,9 @@ from kipoi_veff.scores import get_scoring_fns
 from kipoi_veff.utils.io import SyncBatchWriter
 from kipoi import writers
 from kipoi_utils.utils import cd
-from kipoi_utils.utils import parse_json_file_str
-
+from kipoi_utils.utils import parse_json_file_str, parse_json_file_str_or_arglist
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
-
-
-def _prepare_multi_model_args(args):
-    assert isinstance(args.model, list)
-    assert isinstance(args.source, list)
-    assert isinstance(args.seq_length, list)
-    assert isinstance(args.dataloader, list)
-    assert isinstance(args.dataloader_source, list)
-    assert isinstance(args.dataloader_args, list)
-
-    def ensure_matching_args(ref_arg, query_arg, ref_label, query_label, allow_zero=True):
-        assert isinstance(ref_arg, list)
-        assert isinstance(query_arg, list)
-        n = len(ref_arg)
-        if allow_zero and (len(query_arg) == 0):
-            ret = [None] * n
-        elif len(query_arg) == 1:
-            ret = [query_arg[0]] * n
-        elif not len(query_arg) == n:
-            raise Exception("Either give one {q} for all {r} or one {q} for every {r} in the same order.".format(
-                q=query_label, r=ref_label))
-        else:
-            ret = query_arg
-        return ret
-
-    args.source = ensure_matching_args(args.model, args.source, "--model", "--source", allow_zero=False)
-    args.seq_length = ensure_matching_args(args.model, args.seq_length, "--model", "--seq_length")
-    args.dataloader = ensure_matching_args(args.model, args.dataloader, "--model", "--dataloader")
-    args.dataloader_source = ensure_matching_args(args.dataloader, args.dataloader_source, "--dataloader",
-                                                  "--dataloader_source")
-    args.dataloader_args = ensure_matching_args(args.model, args.dataloader_args, "--model",
-                                                "--dataloader_args", allow_zero=False)
-
 
 def get_single(x, name):
     """Make sure only a single element is used
@@ -80,20 +46,15 @@ def cli_score_variants(command, raw_args):
     assert command == "score_variants"
     parser = argparse.ArgumentParser('kipoi veff {}'.format(command),
                                      description='Predict effect of SNVs using ISM.')
-    parser.add_argument('model', help='Model name.', nargs="+")
-    parser.add_argument('--source', default=["kipoi"], nargs="+",
+    parser.add_argument('model', help='Model name.')
+    parser.add_argument('--source', default="kipoi",
                         choices=list(kipoi.config.model_sources().keys()),
                         help='Model source to use. Specified in ~/.kipoi/config.yaml' +
                              " under model_sources. " +
                              "'dir' is an additional source referring to the local folder.")
-    parser.add_argument('--dataloader', nargs="+", default=[],
-                        help="Dataloader name. If not specified, the model's default" +
-                             "DataLoader will be used")
-    parser.add_argument('--dataloader_source', nargs="+", default=["kipoi"],
-                        help="Dataloader source")
-    parser.add_argument('--dataloader_args', nargs="+", default=[],
-                        help="Dataloader arguments either as a json string:" +
-                             "'{\"arg1\": 1} or as a file path to a json file")
+
+    add_dataloader(parser=parser, with_args=True)
+
     parser.add_argument('-i', '--input_vcf', required=True,
                         help='Input VCF.')
     parser.add_argument('-o', '--output_vcf',
@@ -117,7 +78,7 @@ def cli_score_variants(command, raw_args):
                              "individual JSONs are expected to be supplied in the same order as the labels defined in "
                              "--scoring. If the defaults or no arguments should be used define '{}' for that respective "
                              "scoring method.")
-    parser.add_argument('-l', "--seq_length", type=int, nargs="+", default=[],
+    parser.add_argument('-l', "--seq_length", type=int, default=None,
                         help="Optional parameter: Model input sequence length - necessary if the model does not have a "
                              "pre-defined input sequence length.")
     parser.add_argument('--std_var_id', action="store_true", help="If set then variant IDs in the annotated"
@@ -137,8 +98,10 @@ def cli_score_variants(command, raw_args):
                         "$SINGULARITY_CACHEDIR if set")
 
     args = parser.parse_args(raw_args)
+
+    # OBSOLETE
     # Make sure all the multi-model arguments like source, dataloader etc. fit together
-    _prepare_multi_model_args(args)
+    #_prepare_multi_model_args(args)
 
     # Check that all the folders exist
     file_exists(args.input_vcf, logger)
@@ -163,12 +126,7 @@ def cli_score_variants(command, raw_args):
         # Drop the singularity flag
         raw_args = [x for x in raw_args if x != '--singularity']
 
-        # handle the list case
-        args.model = get_single(args.model, 'model')
-        args.dataloader_args = get_single(args.dataloader_args, 'dataloader_args')
-        args.source = get_single(args.source, 'source')
-
-        dataloader_kwargs = parse_json_file_str(args.dataloader_args)
+        dataloader_kwargs = parse_json_file_str_or_arglist(args.dataloader_args)
 
         # create output files
         output_files = []
@@ -203,103 +161,66 @@ def cli_score_variants(command, raw_args):
                                      "path of a file containing them) must be given for every "
                                      "`--scores` function.")
 
-    n_models = len(args.model)
+    # VCF writer
+    output_vcf_model = None
+    if args.output_vcf is not None:
+        dir_exists(os.path.dirname(args.output_vcf), logger)
+        output_vcf_model = args.output_vcf
 
-    # TODO - remove the feature of running multiple models in parallel
-    for model_name, model_source, dataloader, dataloader_source, dataloader_args, seq_length in zip(args.model,
-                                                                                                    args.source,
-                                                                                                    args.dataloader,
-                                                                                                    args.dataloader_source,
-                                                                                                    args.dataloader_args,
-                                                                                                    args.seq_length):
-        model_name_safe = model_name.replace("/", "_")
+    # Other writers
+    if args.extra_output is not None:
+        dir_exists(os.path.dirname(args.extra_output), logger)
+        extra_output = args.extra_output
+        writer = writers.get_writer(extra_output, metadata_schema=None)
+        assert writer is not None
+        extra_writers = [SyncBatchWriter(writer)]
+    else:
+        extra_writers = []
 
-        # VCF writer
-        output_vcf_model = None
-        if args.output_vcf is not None:
-            dir_exists(os.path.dirname(args.output_vcf), logger)
-            output_vcf_model = args.output_vcf
-            # If multiple models are to be analysed then vcfs need renaming.
-            if n_models > 1:
-                if output_vcf_model.endswith(".vcf"):
-                    output_vcf_model = output_vcf_model[:-4]
-                output_vcf_model += model_name_safe + ".vcf"
+    dataloader_arguments = parse_json_file_str_or_arglist(args.dataloader_args)
 
-        # Other writers
-        if args.extra_output is not None:
-            dir_exists(os.path.dirname(args.extra_output), logger)
-            if n_models > 1:
-                ending = args.extra_output.split('.')[-1]
-                extra_output = args.extra_output[:-len(ending)] + model_name_safe + "." + ending
-            else:
-                extra_output = args.extra_output
-            writer = writers.get_writer(extra_output, metadata_schema=None)
-            assert writer is not None
-            extra_writers = [SyncBatchWriter(writer)]
-        else:
-            extra_writers = []
+    # --------------------------------------------
+    # load model & dataloader
+    model = kipoi.get_model(args.model, args.source)
 
-        dataloader_arguments = parse_json_file_str(dataloader_args)
+    if args.dataloader is not None:
+        Dl = kipoi.get_dataloader_factory(args.dataloader, args.dataloader_source)
+    else:
+        Dl = model.default_dataloader
 
-        # --------------------------------------------
-        # load model & dataloader
-        model = kipoi.get_model(model_name, model_source)
+    # Load effect prediction related model info
+    model_info = kipoi_veff.ModelInfoExtractor(model, Dl)
 
-        if dataloader is not None:
-            Dl = kipoi.get_dataloader_factory(dataloader, dataloader_source)
-        else:
-            Dl = model.default_dataloader
+    if model_info.use_seq_only_rc:
+        logger.info('Model SUPPORTS simple reverse complementation of input DNA sequences.')
+    else:
+        logger.info('Model DOES NOT support simple reverse complementation of input DNA sequences.')
 
-        # Load effect prediction related model info
-        model_info = kipoi_veff.ModelInfoExtractor(model, Dl)
+    if output_vcf_model is not None:
+        logger.info('Annotated VCF will be written to %s.' % str(output_vcf_model))
 
-        if model_info.use_seq_only_rc:
-            logger.info('Model SUPPORTS simple reverse complementation of input DNA sequences.')
-        else:
-            logger.info('Model DOES NOT support simple reverse complementation of input DNA sequences.')
+    model_outputs = None
+    if args.model_outputs is not None:
+        model_outputs = args.model_outputs
 
-        if output_vcf_model is not None:
-            logger.info('Annotated VCF will be written to %s.' % str(output_vcf_model))
+    elif args.model_outputs_i is not None:
+        model_outputs = args.model_outputs_i
 
-        model_outputs = None
-        if args.model_outputs is not None:
-            model_outputs = args.model_outputs
+    kipoi_veff.score_variants(model,
+                              dataloader_arguments,
+                              args.input_vcf,
+                              output_vcf=output_vcf_model,
+                              output_writers=extra_writers,
+                              scores=args.scores,
+                              score_kwargs=score_kwargs,
+                              num_workers=args.num_workers,
+                              batch_size=args.batch_size,
+                              seq_length=args.seq_length,
+                              std_var_id=args.std_var_id,
+                              restriction_bed=args.restriction_bed,
+                              return_predictions=False,
+                              model_outputs=model_outputs)
 
-        elif args.model_outputs_i is not None:
-            model_outputs = args.model_outputs_i
-
-        kipoi_veff.score_variants(model,
-                                  dataloader_arguments,
-                                  args.input_vcf,
-                                  output_vcf=output_vcf_model,
-                                  output_writers=extra_writers,
-                                  scores=args.scores,
-                                  score_kwargs=score_kwargs,
-                                  num_workers=args.num_workers,
-                                  batch_size=args.batch_size,
-                                  seq_length=seq_length,
-                                  std_var_id=args.std_var_id,
-                                  restriction_bed=args.restriction_bed,
-                                  return_predictions=False,
-                                  model_outputs=model_outputs)
-
-    # tabular files
-    # if keep_predictions:
-    #     if file_format in ["tsv"]:
-    #         for model_name in res:
-    #             for i, k in enumerate(res[model_name]):
-    #                 # Remove an old file if it is still there...
-    #                 if i == 0:
-    #                     try:
-    #                         os.unlink(args.extra_output)
-    #                     except Exception:
-    #                         pass
-    #                 with open(args.extra_output, "w") as ofh:
-    #                     ofh.write("KPVEP_%s:%s\n" % (k.upper(), model_name))
-    #                     res[model_name][k].to_csv(args.extra_output, sep="\t", mode="a")
-
-    #     if file_format in ["hdf5", "h5"]:
-    #         deepdish.io.save(args.extra_output, res)
 
     logger.info('Successfully predicted samples')
 
@@ -349,8 +270,9 @@ def cli_create_mutation_map(command, raw_args):
     args = parser.parse_args(raw_args)
 
     # extract args for kipoi.variant_effects.predict_snvs
-
-    dataloader_arguments = parse_json_file_str(args.dataloader_args)
+    print("DL ARGS",args.dataloader_args)
+    dataloader_arguments = parse_json_file_str_or_arglist(args.dataloader_args)
+    #dataloader_arguments = parse_json_file_str(args.dataloader_args)
 
     if args.output is None:
         raise Exception("Output file `--output` has to be set!")
@@ -367,6 +289,7 @@ def cli_create_mutation_map(command, raw_args):
                             source=args.source,
                             dry_run=False)
         return None
+
     # --------------------------------------------
     # install args
     if args.install_req:

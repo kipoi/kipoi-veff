@@ -28,34 +28,34 @@ class dummy_container(object):
     pass
 
 
-def test__prepare_multi_model_args():
-    from kipoi_veff.cli import _prepare_multi_model_args
-    any_len = ["seq_length", "dataloader", "dataloader_source"]
-    keys = ["model", "source", "seq_length", "dataloader", "dataloader_source", "dataloader_args"]
-    for some_empty in [True, False]:
-        args = dummy_container()
-        for k in keys:
-            if k in any_len and some_empty:
-                setattr(args, k, [])
-            else:
-                setattr(args, k, ["a", "b"])
-        _prepare_multi_model_args(args)
-        for k in keys:
-            assert len(getattr(args, k)) == len(getattr(args, "model"))
-            if k in any_len and some_empty:
-                assert all([el is None for el in getattr(args, k)])
-            else:
-                assert all([el is not None for el in getattr(args, k)])
-    args = dummy_container()
-    for k in keys:
-        setattr(args, k, ["a", "b"])
-    args.model = ["a"]
-    with pytest.raises(Exception):
-        _prepare_multi_model_args(args)
+# def test__prepare_multi_model_args():
+#     from kipoi_veff.cli import _prepare_multi_model_args
+#     any_len = ["seq_length", "dataloader", "dataloader_source"]
+#     keys = ["model", "source", "seq_length", "dataloader", "dataloader_source", "dataloader_args"]
+#     for some_empty in [True, False]:
+#         args = dummy_container()
+#         for k in keys:
+#             if k in any_len and some_empty:
+#                 setattr(args, k, [])
+#             else:
+#                 setattr(args, k, ["a", "b"])
+#         _prepare_multi_model_args(args)
+#         for k in keys:
+#             assert len(getattr(args, k)) == len(getattr(args, "model"))
+#             if k in any_len and some_empty:
+#                 assert all([el is None for el in getattr(args, k)])
+#             else:
+#                 assert all([el is not None for el in getattr(args, k)])
+#     args = dummy_container()
+#     for k in keys:
+#         setattr(args, k, ["a", "b"])
+#     args.model = ["a"]
+#     with pytest.raises(Exception):
+#         _prepare_multi_model_args(args)
 
 
 @pytest.mark.parametrize("file_format", ["tsv", "hdf5"])
-def test_predict_variants_example_multimodel(file_format, tmpdir):
+def test_predict_variants_example_single_model(file_format, tmpdir):
     """kipoi predict ...
     """
     if sys.version_info[0] == 2:
@@ -83,7 +83,7 @@ def test_predict_variants_example_multimodel(file_format, tmpdir):
     args = ["python", os.path.abspath("./kipoi_veff/cli.py"),
             "score_variants",
             # "./",  # directory
-            example_dirs[0], example_dirs[1],
+            example_dirs[1],
             "--source=dir",
             "--batch_size=4",
             "--dataloader_args='%s'" % dataloader_kwargs_str,
@@ -98,14 +98,14 @@ def test_predict_variants_example_multimodel(file_format, tmpdir):
     # run the command
     kipoi_veff.cli.cli_score_variants('score_variants', args[3:])
 
-    for example_dir in example_dirs:
+    for example_dir in example_dirs[1:2]:
         # assert filecmp.cmp(example_dir + "/example_files/variants_ref_out.vcf", vcf_tmpfile)
         model_name_safe = example_dir.replace("/", "_")
-        vcf_tmpfile_model = vcf_tmpfile[:-4] + model_name_safe + ".vcf"
+        vcf_tmpfile_model = vcf_tmpfile
         assert os.path.exists(vcf_tmpfile_model)
         compare_vcfs(example_dir + "/example_files/variants_ref_out.vcf", vcf_tmpfile_model)
         ending = tmpfile.split('.')[-1]
-        extra_output = tmpfile[:-len(ending)] + model_name_safe + "." + ending
+        extra_output = tmpfile
         assert os.path.exists(extra_output)
 
         if file_format == "hdf5":
@@ -117,7 +117,8 @@ def test_predict_variants_example_multimodel(file_format, tmpdir):
 @pytest.mark.parametrize("example", ["rbp", "non_bedinput_model"])
 @pytest.mark.parametrize("restricted_bed", [True, False])
 @pytest.mark.parametrize("file_format", ["tsv", "hdf5"])
-def test_predict_variants_example(example, restricted_bed, file_format, tmpdir):
+@pytest.mark.parametrize("new_dataloader_kwargs_format", [False, True])
+def test_predict_variants_example(example, restricted_bed, file_format, new_dataloader_kwargs_format, tmpdir):
     """kipoi predict ...
     """
     if (example not in {"rbp", "non_bedinput_model"}) or (sys.version_info[0] == 2):
@@ -131,8 +132,6 @@ def test_predict_variants_example(example, restricted_bed, file_format, tmpdir):
     # alterations in region generation have no influence on that model
     if restricted_bed and (example != "rbp"):
         pytest.skip("Resticted_bed only available for rbp_eclip")
-    print(example)
-    print("tmpdir: {0}".format(tmpdir))
     tmpfile = str(tmpdir_here.join("out.{0}".format(file_format)))
     vcf_tmpfile = str(tmpdir_here.join("out.{0}".format("vcf")))
 
@@ -141,20 +140,35 @@ def test_predict_variants_example(example, restricted_bed, file_format, tmpdir):
                          "gtf_file": "example_files/gencode_v25_chr22.gtf.pkl.gz",
                          "intervals_file": "example_files/variant_intervals.tsv"}
     dataloader_kwargs = {k: example_dir + v for k, v in dataloader_kwargs.items()}
-    import json
-    dataloader_kwargs_str = json.dumps(dataloader_kwargs)
+    if not new_dataloader_kwargs_format:
+        import json
+        dataloader_kwargs_str = json.dumps(dataloader_kwargs)
 
-    args = ["python", os.path.abspath("./kipoi_veff/cli.py"),
-            "score_variants",
-            # "./",  # directory
-            example_dir,
-            "--source=dir",
-            "--batch_size=4",
-            "--dataloader_args='%s'" % dataloader_kwargs_str,
-            "--input_vcf", temp(example_dir + "/example_files/variants.vcf", tmpdir),
-            # this one was now gone in the master?!
-            "--output_vcf", vcf_tmpfile,
-            "--extra_output", tmpfile]
+        args = ["python", os.path.abspath("./kipoi_veff/cli.py"),
+                "score_variants",
+                # "./",  # directory
+                example_dir,
+                "--source=dir",
+                "--batch_size=4",
+                "--dataloader_args='%s'" % dataloader_kwargs_str,
+                "--input_vcf", temp(example_dir + "/example_files/variants.vcf", tmpdir),
+                # this one was now gone in the master?!
+                "--output_vcf", vcf_tmpfile,
+                "--extra_output", tmpfile]
+    else:
+        dataloader_kwargs_list = ["{0}={1}".format(key, val) for key,val in dataloader_kwargs.items()]
+        args = ["python", os.path.abspath("./kipoi_veff/cli.py"),
+                "score_variants",
+                # "./",  # directory
+                example_dir,
+                "--source=dir",
+                "--batch_size=4",
+                "--dataloader_args"] + dataloader_kwargs_list + [
+                "--input_vcf", temp(example_dir + "/example_files/variants.vcf", tmpdir),
+                # this one was now gone in the master?!
+                "--output_vcf", vcf_tmpfile,
+                "--extra_output", tmpfile]
+
     # run the
     if INSTALL_FLAG:
         args.append(INSTALL_FLAG)
