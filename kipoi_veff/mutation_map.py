@@ -838,7 +838,7 @@ class MutationMap(object):
         if vcf_fpath is not None:
             vcf_fh = cyvcf2.VCF(vcf_fpath, "r")
         if bed_fpath is not None:
-            bed_obj = BedTool(bed_fpath).tabix()
+            bed_obj = BedTool(bed_fpath).tabix(force=True)
 
         bed_id_conv_fh = None
         if bed3_to_vcf_idx is not None:
