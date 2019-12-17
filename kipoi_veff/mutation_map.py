@@ -722,8 +722,8 @@ class MutationMap(object):
         # then generate the bed file.
         if self.exec_files_bed_keys is not None:
             temp_bed3_file = tempfile.mktemp()  # file path of the temp file
-            bed3_to_vcf_idx = tempfile.mktemp()
             if (vcf_to_region is not None) and (vcf_fpath is not None):
+                bed3_to_vcf_idx = tempfile.mktemp()
                 logger.warn("Using VCF file %s to define the dataloader intervals." % vcf_fpath)
                 vcf_search_regions = False
                 vcf_fh = cyvcf2.VCF(vcf_fpath, "r")
