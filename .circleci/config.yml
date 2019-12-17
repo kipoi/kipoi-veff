@@ -9,12 +9,13 @@ variables:
     run:
       name: Install pip dependencies
       command: |
-        pip install kipoiseq
+        pip install kipoiseq cython
   install_conda_deps: &install_conda_deps
     run:
       name: Install conda dependencies
       command: |
-        conda install genomelake pyfaidx -c bioconda
+        conda install genomelake pyfaidx cyvcf2 pybedtools pysam intervaltree<3 pyvcf -c bioconda
+        conda install h5py
         conda install --yes pytorch-cpu -c pytorch
   install_kipoi_veff: &install_kipoi_veff
     run:
