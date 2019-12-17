@@ -14,7 +14,7 @@ variables:
     run:
       name: Install conda dependencies
       command: |
-        conda install genomelake pyfaidx cyvcf2 pybedtools pysam intervaltree<3 pyvcf -c bioconda
+        conda install genomelake pyfaidx cyvcf2 pybedtools pysam 'intervaltree<3' pyvcf -c bioconda
         conda install h5py
         conda install --yes pytorch-cpu -c pytorch
   install_kipoi_veff: &install_kipoi_veff
