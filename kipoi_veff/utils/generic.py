@@ -484,7 +484,7 @@ def _get_dl_bed_fields(dataloader):
     if dataloader.postprocessing.get("variant_effects", None) is None:
         return None
     else:
-        return dataloader.postprocessing["variant_effects"].bed_input
+        return getattr(dataloader.postprocessing["variant_effects"], "bed_input", None)
 
 
 # TODO - can we find a better name for this class?
