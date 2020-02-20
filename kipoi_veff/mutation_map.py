@@ -7,7 +7,7 @@ import gzip
 
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from kipoi_veff import BedOverlappingRg, SnvCenteredRg, ensure_tabixed_vcf
 from kipoi_veff.scores import Logit, get_scoring_fns
