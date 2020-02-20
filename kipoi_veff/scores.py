@@ -254,7 +254,7 @@ scoring_names = {
 
 def get_avail_scoring_fns(model):
     if model.postprocessing.get('variant_effects', None) is None:
-        raise Exception("Model deosn't support variant effect prediction according model yaml file.")
+        raise Exception("Model doesn't support variant effect prediction according to the model yaml file.")
     avail_scoring_fns = []  # contains callables
     avail_scoring_fn_def_args = []  # default kwargs for every callable
     avail_scoring_fn_names = []  # contains the labels
