@@ -8,7 +8,7 @@ import gzip
 import numpy as np
 import pandas as pd
 import six
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 import kipoi_veff
 from kipoi_veff.scores import Logit, get_scoring_fns
