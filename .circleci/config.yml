@@ -66,6 +66,31 @@ jobs:
       - *store_test_results
       - *store_test_artifacts
 
+  build-deploy-docs:	
+    docker:	
+      - image: continuumio/miniconda3:4.7.10
+    working_directory: ~/repo	
+    steps:	
+      - add_ssh_keys:	
+          fingerprints:	
+            - 08:c1:46:ae:ea:06:99:b6:64:ee:3f:e0:98:ac:30:ce	
+      - checkout
+      - *update_conda
+      - *install_from_dev_requirements_py36
+      - run:
+          name: Install build deps
+          command: pip install nbconvert==5.4.0 tornado==5.1.1 mkdocs git+https://github.com/kipoi/pydoc-markdown@master
+      - run:	
+          name: Build docs	
+          command: |	
+            cd docs/	
+            mkdir -p theme_dir/img/ipynb/	
+            ./render_ipynb.bash	
+            pydocmd build	
+      - run:	
+          name: Deploy docs	
+          command: .circleci/deploy_docs.bash	
+
 workflows:
   version: 2
 
