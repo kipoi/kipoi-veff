@@ -77,7 +77,7 @@ def variant_to_dict(variant):
         ('variant_chr', variant.CHROM),
         ('variant_pos', variant.POS),
         ('variant_ref', variant.REF),
-        ('variant_alt', variant.ALT[0]),  # WARNING - assuming a single alternative
+        ('variant_alt', variant.ALT[0] if variant.ALT else '.'),  # WARNING - assuming a single alternative
     ])
 
 
