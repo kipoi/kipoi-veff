@@ -3,9 +3,11 @@
 
 [![Not Maintained](https://img.shields.io/badge/Maintenance%20Level-Not%20Maintained-yellow.svg)](https://gist.github.com/cheerfulstoic/d107229326a01ff0f333a1d3476e068d)
 
-## In order to simplify this code base we have rewritten parts of it in [kipoi-veff2](https://github.com/kipoi/kipoi-veff2). If you must use this code base, please make sure the following 
+## In order to simplify this code base we have rewritten parts of it in [kipoi-veff2](https://github.com/kipoi/kipoi-veff2). If you must use this code base, make sure the following 
 - `model_sources.kipoi.auto_update` is False in `~/.kipoi/config.yaml` 
-- `git checkout c82b20d` at `model_sources.kipoi.local_path` from `~/.kipoi/config.yaml`. This will ensure your local models repo remains compatible with kipoi-veff. 
+- `pip install kipoi==0.6.35`
+- `git checkout 59b0140` at `model_sources.kipoi.local_path` from `~/.kipoi/config.yaml`. This will ensure your local models repo remains compatible with kipoi-veff. 
+- An alternative to above step can be to manually copy the postprocessing tag of your chosen model from [here](https://github.com/kipoi/models/tree/59b0140) to `model_sources.kipoi.local_path/<model>/model(model-template).yml`. For example, if you would like to work with DeepBind, copy [this](https://github.com/kipoi/models/blob/59b0140b1ef1087c51e2ba514ce365700a144ad0/DeepBind/model-template.yaml#L58-L63)  to `model_sources.kipoi.local_path/DeepBind/model-template.yml`.
 
 
 <a href='https://circleci.com/gh/kipoi/kipoi-veff'>
