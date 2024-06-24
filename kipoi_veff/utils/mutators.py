@@ -102,7 +102,7 @@ class OneHotSequenceMutator_OLD(SequenceMutator):
                                                                     np.all(np.in1d(x, np.arange(0, 4))) else 4] for x in
                             input_set[pcl, ...]])
             logger.warn("Variant reference allele is not the allele present in sequence for:\n%s\n"
-                        "Sequence:\n%s" % (str(preproc_conv.iloc[pcl]), vstr))
+                        "Sequence:\n%s\nUsing the variant reference allele." % (str(preproc_conv.iloc[pcl]), vstr))
         # generate reverse complement if needed
         if s_dir == "rc":
             input_set = input_set[:, ::-1, ::-1]
@@ -146,7 +146,7 @@ class OneHotSequenceMutator(SequenceMutator):
                                                                     np.all(np.in1d(x, np.arange(0, 4))) else 4] for x in
                             input_set[pcl, ...]])
             logger.warn("Variant reference allele is not the allele present in sequence for:\n%s\n"
-                        "Sequence:\n%s" % (str(variant_loc.to_df().iloc[pcl]), vstr))
+                        "Sequence:\n%s\nUsing the variant reference allele." % (str(variant_loc.to_df().iloc[pcl]), vstr))
         # generate reverse complement if needed
         if s_dir == "rc":
             input_set = input_set[:, ::-1, ::-1]
@@ -192,7 +192,7 @@ class DNAStringSequenceMutator_OLD(SequenceMutator):
                         vstr = rc_str(input_set[l])
                     if vstr[int(preproc_conv["varpos_rel"].values[pcl])].upper() != base.upper():
                         logger.warn("Variant reference allele is not the allele present in sequence for:\n%s\n"
-                                    "Sequence:\n%s" % (str(preproc_conv.iloc[pcl]), str(input_set[l])))
+                                    "Sequence:\n%s\nUsing the variant reference allele." % (str(preproc_conv.iloc[pcl]), str(input_set[l])))
             else:
                 output_set.append(input_set[l])
         # subset to the lines that have been identified
@@ -243,7 +243,7 @@ class DNAStringSequenceMutator(SequenceMutator):
                         vstr = rc_str(input_set[l])
                     if vstr[int(variant_loc["varpos_rel"][pcl])].upper() != base.upper():
                         logger.warn("Variant reference allele is not the allele present in sequence for:\n%s\n"
-                                    "Sequence:\n%s" % (str(variant_loc.to_df().iloc[pcl]), str(input_set[l])))
+                                    "Sequence:\n%s\nUsing the variant reference allele." % (str(variant_loc.to_df().iloc[pcl]), str(input_set[l])))
             else:
                 output_set.append(input_set[l])
         # subset to the lines that have been identified
