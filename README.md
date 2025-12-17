@@ -3,6 +3,23 @@
 
 [![Not Maintained](https://img.shields.io/badge/Maintenance%20Level-Not%20Maintained-yellow.svg)](https://gist.github.com/cheerfulstoic/d107229326a01ff0f333a1d3476e068d)
 
+
+> [!WARNING]
+> ### **Kipoi Project - Sunset Announcement**
+> 
+> After several impactful years, we have made the decision to **archive the Kipoi repositories and end active maintenance** of the project.
+> 
+> This is a bittersweet moment. While it’s always a little sad to sunset a project, the field of machine learning in genomics has evolved rapidly, with new technologies and platforms emerging that better meet current needs. Kipoi played an important role in its time, helping researchers **share, reuse, and benchmark trained models** in regulatory genomics. We’re proud of what it accomplished and grateful for the strong community support that made it possible.
+> 
+> Kipoi’s impact continues, however:
+> 
+> *   [The Kipoi webinar series](seminar.html) will carry on, supporting discussions around model reuse and interpretability.
+> *   [Kipoiseq](https://github.com/kipoi/kipoiseq), our standard set of data-loaders for sequence-based modeling, also remains active and relevant.
+> 
+> Thanks to everyone who contributed, used, or supported Kipoi. It’s been a fantastic journey, and we're glad the project helped shape how models are shared in the field.
+> 
+> \- The Kipoi Team
+
 ## In order to simplify this code base we have rewritten parts of it in [kipoi-veff2](https://github.com/kipoi/kipoi-veff2). If you must use this code base, make sure the following 
 - `model_sources.kipoi.auto_update` is False in `~/.kipoi/config.yaml` 
 - `pip install kipoi==0.6.35`
